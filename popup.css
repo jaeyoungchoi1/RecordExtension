@@ -8,7 +8,7 @@
 }
 
 body {
-  width: 320px;
+  width: 360px;
   margin: 0;
 }
 
@@ -41,8 +41,31 @@ h1 {
   margin-bottom: 12px;
 }
 
+.viewport-section {
+  gap: 8px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-header > span {
+  font-size: 12px;
+  font-weight: 720;
+  color: #52616a;
+}
+
 .grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.setup-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 label {
@@ -110,6 +133,13 @@ button:disabled {
 .message {
   flex: 1;
   text-align: right;
+}
+
+.footer-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 150px;
 }
 
 .switch {

@@ -4,7 +4,8 @@ const DEFAULT_SETTINGS = {
   viewportHeight: 720,
   scrollStep: 120,
   userId: "",
-  taskId: ""
+  taskId: "",
+  isRecording: false
 };
 
 const DB_NAME = "gazeaware-recorder";
@@ -22,12 +23,14 @@ const fields = {
   chooseFolder: document.getElementById("chooseFolder"),
   folderStatus: document.getElementById("folderStatus"),
   saveSetup: document.getElementById("saveSetup"),
+  stopRecording: document.getElementById("stopRecording"),
   message: document.getElementById("message")
 };
 
 document.addEventListener("DOMContentLoaded", initialize);
 fields.chooseFolder.addEventListener("click", chooseLogFolder);
-fields.saveSetup.addEventListener("click", saveSetup);
+fields.saveSetup.addEventListener("click", startRecording);
+fields.stopRecording.addEventListener("click", stopRecording);
 fields.enabled.addEventListener("change", persistSettingsOnly);
 
 async function initialize() {
@@ -38,6 +41,7 @@ async function initialize() {
   fields.viewportWidth.value = stored.viewportWidth || DEFAULT_SETTINGS.viewportWidth;
   fields.viewportHeight.value = stored.viewportHeight || DEFAULT_SETTINGS.viewportHeight;
   fields.scrollStep.value = stored.scrollStep || DEFAULT_SETTINGS.scrollStep;
+  updateRecordingButtons(Boolean(stored.isRecording));
   await updateFolderStatus();
 }
 
@@ -61,27 +65,47 @@ async function chooseLogFolder() {
   }
 }
 
-async function saveSetup() {
+async function startRecording() {
   clearMessage();
   fields.saveSetup.disabled = true;
+  let didStart = false;
 
   try {
     const setup = collectSetup();
     await chrome.storage.local.set(setup);
     await writeInitialTaskFiles(setup);
-    await notifyActiveTab();
-    setMessage("Saved");
+    await chrome.storage.local.set({ isRecording: true });
+    await notifyActiveTab("GAZEAWARE_START_RECORDING");
+    didStart = true;
+    updateRecordingButtons(true);
+    setMessage("Recording");
   } catch (error) {
     setMessage(error.message);
   } finally {
-    fields.saveSetup.disabled = false;
+    updateRecordingButtons(didStart);
+  }
+}
+
+async function stopRecording() {
+  clearMessage();
+  fields.stopRecording.disabled = true;
+
+  try {
+    await chrome.storage.local.set({ isRecording: false });
+    await notifyActiveTab("GAZEAWARE_STOP_RECORDING");
+    updateRecordingButtons(false);
+    setMessage("Stopped");
+  } catch (error) {
+    setMessage(error.message);
+  } finally {
+    updateRecordingButtons(false);
   }
 }
 
 async function persistSettingsOnly() {
   const setup = collectSetup({ allowEmptyUser: true, allowEmptyTask: true });
   await chrome.storage.local.set(setup);
-  await notifyActiveTab();
+  await notifyActiveTab("GAZEAWARE_APPLY_VIEWPORT");
 }
 
 function collectSetup(options = {}) {
@@ -196,7 +220,7 @@ async function downloadTextFile(filename, text) {
   }
 }
 
-async function notifyActiveTab() {
+async function notifyActiveTab(messageType = "GAZEAWARE_APPLY_VIEWPORT") {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.id || !tab.url || !/^https?:\/\//.test(tab.url)) {
     return;
@@ -207,7 +231,7 @@ async function notifyActiveTab() {
     await ensureReadWritePermission(rootHandle);
   }
 
-  await chrome.runtime.sendMessage({ type: "GAZEAWARE_APPLY_VIEWPORT" });
+  await chrome.runtime.sendMessage({ type: messageType });
 
   try {
     await chrome.tabs.sendMessage(tab.id, { type: "GAZEAWARE_APPLY_SETTINGS" });
@@ -280,4 +304,9 @@ function setMessage(text) {
 
 function clearMessage() {
   setMessage("");
+}
+
+function updateRecordingButtons(isRecording) {
+  fields.saveSetup.disabled = Boolean(isRecording);
+  fields.stopRecording.disabled = !isRecording;
 }

@@ -5,7 +5,8 @@
     enabled: false,
     viewportWidth: 1080,
     viewportHeight: 720,
-    scrollStep: 120
+    scrollStep: 500,
+    isRecording: false
   };
 
   if (window[GLOBAL_KEY]) {
@@ -22,8 +23,9 @@
   function readSettings() {
     chrome.storage.local.get(DEFAULT_SETTINGS, (stored) => {
       state.settings = normalizeSettings(stored);
-      if (state.settings.enabled) {
+      if (state.settings.enabled || state.settings.isRecording) {
         enableGuards();
+        syncRecordingGuards();
       } else {
         disableGuards();
       }
@@ -35,7 +37,8 @@
       enabled: Boolean(raw.enabled),
       viewportWidth: toPositiveInteger(raw.viewportWidth, DEFAULT_SETTINGS.viewportWidth),
       viewportHeight: toPositiveInteger(raw.viewportHeight, DEFAULT_SETTINGS.viewportHeight),
-      scrollStep: toPositiveInteger(raw.scrollStep, DEFAULT_SETTINGS.scrollStep)
+      scrollStep: toPositiveInteger(raw.scrollStep, DEFAULT_SETTINGS.scrollStep),
+      isRecording: Boolean(raw.isRecording)
     };
   }
 
@@ -54,8 +57,6 @@
     window.addEventListener("click", handleClick, { capture: true });
     window.addEventListener("keydown", handleKeyDown, { capture: true });
     document.addEventListener("submit", forceSameTabSubmit, { capture: true });
-    forceSameTabTargets();
-    observeTargets();
     state.enabled = true;
   }
 
@@ -103,14 +104,16 @@
     const after = getScrollTop();
     const scroll = after - before;
 
-    sendInteraction({
-      type: event.key === "ArrowDown" ? "scrollBottom" : "scrollTop",
-      scroll
-    });
+    if (state.settings.isRecording) {
+      sendInteraction({
+        type: event.key === "ArrowDown" ? "scrollBottom" : "scrollTop",
+        scroll
+      });
+    }
   }
 
   function handleClick(event) {
-    if (!state.settings.enabled) {
+    if (!state.settings.isRecording) {
       return;
     }
 
@@ -131,7 +134,7 @@
   }
 
   function forceSameTabSubmit(event) {
-    if (!state.settings.enabled || !event.target || event.target.tagName !== "FORM") {
+    if (!state.settings.isRecording || !event.target || event.target.tagName !== "FORM") {
       return;
     }
 
@@ -156,6 +159,19 @@
       attributes: true,
       attributeFilter: ["target"]
     });
+  }
+
+  function syncRecordingGuards() {
+    if (state.settings.isRecording) {
+      forceSameTabTargets();
+      observeTargets();
+      return;
+    }
+
+    if (state.targetObserver) {
+      state.targetObserver.disconnect();
+      state.targetObserver = null;
+    }
   }
 
   function getScrollTop() {
@@ -215,7 +231,7 @@
       return;
     }
 
-    const relevantKeys = ["enabled", "viewportWidth", "viewportHeight", "scrollStep"];
+    const relevantKeys = ["enabled", "viewportWidth", "viewportHeight", "scrollStep", "isRecording"];
     if (relevantKeys.some((key) => Object.prototype.hasOwnProperty.call(changes, key))) {
       readSettings();
     }

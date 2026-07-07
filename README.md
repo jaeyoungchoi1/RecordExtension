@@ -15,7 +15,7 @@ This is an early Chrome extension scaffold for an experimental web-browsing reco
 - New-tab links are forced back into the same tab
 - Page-load and interaction logging
 - `click` is recorded only when a link click is confirmed to cause a real URL navigation
-- Popup setup for `User ID`, `Task ID`, and viewport settings
+- Popup setup for `User ID`, `Task ID`, viewport settings, and Start/Stop recording control
 
 ## Output Structure
 
@@ -42,6 +42,8 @@ The `interaction` array appends `page`, `scrollTop`, `scrollBottom`, and `click`
 
 Web logs are written through the File System Access API. To avoid repeated Chrome download UI, `web_logs/` does not use the downloads API fallback. If folder permission is missing or expired, choose `Log Folder` again and press `Start`.
 
+`Viewport` controls only viewport emulation and scroll behavior. `Start` begins recording for the current user/task, and `Stop` ends recording without changing the viewport toggle.
+
 ## Load In Chrome Developer Mode
 
 1. Open `chrome://extensions/` in Chrome.
@@ -53,9 +55,10 @@ Web logs are written through the File System Access API. To avoid repeated Chrom
 6. Click `Log Folder` and select the local folder where experiment logs should be written.
    - Select this project folder if you want `task_logs/` to be created here.
    - This step is required for silent `web_logs/` writing.
-7. Enter `User ID` and `Task ID`, turn on the viewport toggle, then click `Start`.
+7. Enter `User ID` and `Task ID`, configure the `Viewport` section, turn on the viewport toggle if needed, then click `Start`.
 8. Open or refresh the experiment web page.
-9. If proceed experiment to next `User` or `Task`, repeat 7 (enter id, turn on viewport toggle, then click `Start`)
+9. Click `Stop` when the recording session should end.
+10. To proceed to the next `User` or `Task`, repeat step 7 with the new IDs and click `Start`.
 
 Because this extension uses the `debugger` permission, Chrome may show a message that the extension is debugging the browser. This is expected and allows CSP-friendly viewport emulation, screenshots, DOM snapshots, CSS snapshots, and accessibility tree capture.
 

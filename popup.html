@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,13 +10,9 @@
     <main class="app">
       <header class="header">
         <h1>GazeAware</h1>
-        <label class="switch" title="Enable experiment viewport">
-          <input id="enabled" type="checkbox">
-          <span></span>
-        </label>
       </header>
 
-      <section class="section">
+      <section class="section setup-grid">
         <label>
           <span>User ID</span>
           <input id="userId" type="text" inputmode="numeric" autocomplete="off" placeholder="1">
@@ -27,19 +23,28 @@
         </label>
       </section>
 
-      <section class="section grid">
-        <label>
-          <span>Width</span>
-          <input id="viewportWidth" type="number" min="1" step="1" value="1080">
-        </label>
-        <label>
-          <span>Height</span>
-          <input id="viewportHeight" type="number" min="1" step="1" value="720">
-        </label>
-        <label>
-          <span>Scroll Step</span>
-          <input id="scrollStep" type="number" min="1" step="1" value="120">
-        </label>
+      <section class="section viewport-section">
+        <div class="section-header">
+          <span>Viewport</span>
+          <label class="switch" title="Enable experiment viewport">
+            <input id="enabled" type="checkbox">
+            <span></span>
+          </label>
+        </div>
+        <div class="grid">
+          <label>
+            <span>Width</span>
+            <input id="viewportWidth" type="number" min="1" step="1" value="1080">
+          </label>
+          <label>
+            <span>Height</span>
+            <input id="viewportHeight" type="number" min="1" step="1" value="720">
+          </label>
+          <label>
+            <span>Scroll Step</span>
+            <input id="scrollStep" type="number" min="1" step="1" value="500">
+          </label>
+        </div>
       </section>
 
       <section class="section">
@@ -48,7 +53,10 @@
       </section>
 
       <footer class="footer">
-        <button id="saveSetup" class="primary" type="button">Start</button>
+        <div class="footer-actions">
+          <button id="saveSetup" class="primary" type="button">Start</button>
+          <button id="stopRecording" class="secondary" type="button">Stop</button>
+        </div>
         <p id="message" class="message" role="status"></p>
       </footer>
     </main>

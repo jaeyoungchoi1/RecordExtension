@@ -2,9 +2,10 @@ const DEFAULT_SETTINGS = {
   enabled: false,
   viewportWidth: 1080,
   viewportHeight: 720,
-  scrollStep: 120,
+  scrollStep: 500,
   userId: "",
-  taskId: ""
+  taskId: "",
+  isRecording: false
 };
 
 const DEBUGGER_PROTOCOL_VERSION = "1.3";
@@ -37,6 +38,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "GAZEAWARE_START_RECORDING") {
+    startRecordingForActiveTab()
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
+  if (message.type === "GAZEAWARE_STOP_RECORDING") {
+    stopRecordingForAllTabs()
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
   if (message.type === "GAZEAWARE_INTERACTION") {
     appendInteraction(sender.tab && sender.tab.id, message.interaction)
       .then(() => sendResponse({ ok: true }))
@@ -55,11 +70,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== "local" || !changes.enabled && !changes.viewportWidth && !changes.viewportHeight) {
+  if (areaName !== "local") {
     return;
   }
 
-  applyViewportToActiveTab().catch(() => {});
+  if (changes.isRecording) {
+    if (changes.isRecording.newValue) {
+      startRecordingForActiveTab().catch(() => {});
+    } else {
+      stopRecordingForAllTabs().catch(() => {});
+    }
+  }
+
+  if (changes.enabled || changes.viewportWidth || changes.viewportHeight) {
+    applyViewportToActiveTab().catch(() => {});
+  }
 });
 
 chrome.tabs.onCreated.addListener((tab) => {
@@ -81,13 +106,14 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 
   getSettings().then((settings) => {
-    if (!settings.enabled) {
-      return;
+    const tasks = [];
+    if (settings.enabled) {
+      tasks.push(applyViewportToTab(tabId, settings));
     }
-
-    applyViewportToTab(tabId, settings)
-      .then(() => schedulePageLog(tabId))
-      .catch(() => {});
+    if (settings.isRecording) {
+      tasks.push(schedulePageLog(tabId));
+    }
+    Promise.all(tasks).catch(() => {});
   });
 });
 
@@ -117,9 +143,12 @@ async function applyViewportToActiveTab() {
   const settings = await getSettings();
   if (settings.enabled) {
     await applyViewportToTab(tab.id, settings);
-    await schedulePageLog(tab.id);
   } else {
     await clearViewportForTab(tab.id);
+  }
+
+  if (settings.isRecording) {
+    await schedulePageLog(tab.id);
   }
 }
 
@@ -131,7 +160,8 @@ async function getSettings() {
     viewportHeight: toPositiveInteger(stored.viewportHeight, DEFAULT_SETTINGS.viewportHeight),
     scrollStep: toPositiveInteger(stored.scrollStep, DEFAULT_SETTINGS.scrollStep),
     userId: sanitizePathPart(stored.userId),
-    taskId: sanitizePathPart(stored.taskId)
+    taskId: sanitizePathPart(stored.taskId),
+    isRecording: Boolean(stored.isRecording)
   };
 }
 
@@ -142,10 +172,7 @@ function toPositiveInteger(value, fallback) {
 
 async function applyViewportToTab(tabId, settings) {
   const target = { tabId };
-  await attachDebugger(target);
-  await sendCommand(target, "Page.enable");
-  await sendCommand(target, "Runtime.enable");
-  await sendCommand(target, "Accessibility.enable").catch(() => {});
+  await prepareDebuggerDomains(target);
   await sendCommand(target, "Emulation.setDeviceMetricsOverride", {
     width: settings.viewportWidth,
     height: settings.viewportHeight,
@@ -162,6 +189,13 @@ async function applyViewportToTab(tabId, settings) {
     height: settings.viewportHeight
   });
   await setScrollbarsHidden(target, true);
+}
+
+async function prepareDebuggerDomains(target) {
+  await attachDebugger(target);
+  await sendCommand(target, "Page.enable");
+  await sendCommand(target, "Runtime.enable");
+  await sendCommand(target, "Accessibility.enable").catch(() => {});
 }
 
 async function clearViewportForTab(tabId) {
@@ -210,7 +244,7 @@ async function handleCreatedTab(tab) {
   }
 
   const settings = await getSettings();
-  if (!settings.enabled) {
+  if (!settings.isRecording) {
     return;
   }
 
@@ -221,6 +255,37 @@ async function handleCreatedTab(tab) {
   }
 
   pendingNewTabs.set(tab.id, tab.openerTabId);
+}
+
+async function startRecordingForActiveTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab || !tab.id || !isWebUrl(tab.url)) {
+    return;
+  }
+
+  const settings = await getSettings();
+  if (settings.enabled) {
+    await applyViewportToTab(tab.id, settings);
+  }
+  await schedulePageLog(tab.id);
+}
+
+async function stopRecordingForAllTabs() {
+  const tabs = await chrome.tabs.query({});
+  await Promise.all(tabs.filter((tab) => tab.id).map((tab) => stopRecordingForTab(tab.id)));
+}
+
+async function stopRecordingForTab(tabId) {
+  pageLogRuns.set(tabId, (pageLogRuns.get(tabId) || 0) + 1);
+  pageLogsByTab.delete(tabId);
+  pendingInteractionsByTab.delete(tabId);
+  pendingNavigationClicksByTab.delete(tabId);
+  pendingNewTabs.delete(tabId);
+
+  const settings = await getSettings();
+  if (!settings.enabled) {
+    await clearViewportForTab(tabId);
+  }
 }
 
 async function redirectPendingNewTab(tabId, url) {
@@ -262,12 +327,16 @@ async function schedulePageLog(tabId) {
 
 async function createPageLog(tabId, tab) {
   const settings = await getSettings();
-  if (!settings.enabled) {
+  if (!settings.isRecording) {
     return;
   }
 
   const target = { tabId };
-  await applyViewportToTab(tabId, settings);
+  if (settings.enabled) {
+    await applyViewportToTab(tabId, settings);
+  } else {
+    await prepareDebuggerDomains(target);
+  }
   await waitForPageStable(target);
 
   const tabNumber = getTabNumber(tabId);
@@ -334,7 +403,7 @@ async function appendInteraction(tabId, interaction) {
   }
 
   const settings = await getSettings();
-  if (!settings.enabled) {
+  if (!settings.isRecording) {
     return;
   }
 
