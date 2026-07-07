@@ -66,4 +66,4 @@ After editing extension code, click the reload button for this extension in `chr
 
 ## Reference
 
-This project borrows the task-output idea and Chrome-extension loading workflow from A11y-CUA `Computer-Use-Recorder`. The original recorder targets Windows desktop behavior with OBS and a local Python server; this extension keeps the scope limited to web scenarios.
+This project borrows the task-output idea and Chrome-extension loading workflow from A11y-CUA `Computer-Use-Recorder`. The original recorder targets Windows desktop behavior with OBS and a local Python server; this extension keeps the scope limited to web scenarios with using Chrome extensions.
