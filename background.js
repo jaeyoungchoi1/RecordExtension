@@ -6,17 +6,41 @@ const DEFAULT_SETTINGS = {
 };
 
 const DEBUGGER_PROTOCOL_VERSION = "1.3";
+const DB_NAME = "gazeaware-recorder";
+const DB_VERSION = 1;
+const STORE_NAME = "handles";
+const ROOT_HANDLE_KEY = "logRoot";
+
 const attachedTabs = new Set();
+const tabNumbers = new Map();
+const tabOrders = new Map();
+const pageLogsByTab = new Map();
+const pageLogRuns = new Map();
+const pendingInteractionsByTab = new Map();
+const pendingNewTabs = new Map();
+
+let nextTabNumber = 1;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || message.type !== "GAZEAWARE_APPLY_VIEWPORT") {
+  if (!message) {
     return false;
   }
 
-  applyViewportToActiveTab()
-    .then(() => sendResponse({ ok: true }))
-    .catch((error) => sendResponse({ ok: false, error: error.message }));
-  return true;
+  if (message.type === "GAZEAWARE_APPLY_VIEWPORT") {
+    applyViewportToActiveTab()
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
+  if (message.type === "GAZEAWARE_INTERACTION") {
+    appendInteraction(sender.tab && sender.tab.id, message.interaction)
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
+  return false;
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -27,20 +51,39 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   applyViewportToActiveTab().catch(() => {});
 });
 
+chrome.tabs.onCreated.addListener((tab) => {
+  handleCreatedTab(tab).catch(() => {});
+});
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (pendingNewTabs.has(tabId) && isWebUrl(tab.url)) {
+    redirectPendingNewTab(tabId, tab.url).catch(() => {});
+    return;
+  }
+
   if (changeInfo.status !== "complete" || !isWebUrl(tab.url)) {
     return;
   }
 
   getSettings().then((settings) => {
-    if (settings.enabled) {
-      applyViewportToTab(tabId, settings).catch(() => {});
+    if (!settings.enabled) {
+      return;
     }
+
+    applyViewportToTab(tabId, settings)
+      .then(() => schedulePageLog(tabId))
+      .catch(() => {});
   });
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   attachedTabs.delete(tabId);
+  tabNumbers.delete(tabId);
+  tabOrders.delete(tabId);
+  pageLogsByTab.delete(tabId);
+  pageLogRuns.delete(tabId);
+  pendingInteractionsByTab.delete(tabId);
+  pendingNewTabs.delete(tabId);
 });
 
 chrome.debugger.onDetach.addListener((source) => {
@@ -58,6 +101,7 @@ async function applyViewportToActiveTab() {
   const settings = await getSettings();
   if (settings.enabled) {
     await applyViewportToTab(tab.id, settings);
+    await schedulePageLog(tab.id);
   } else {
     await clearViewportForTab(tab.id);
   }
@@ -81,6 +125,9 @@ function toPositiveInteger(value, fallback) {
 async function applyViewportToTab(tabId, settings) {
   const target = { tabId };
   await attachDebugger(target);
+  await sendCommand(target, "Page.enable");
+  await sendCommand(target, "Runtime.enable");
+  await sendCommand(target, "Accessibility.enable").catch(() => {});
   await sendCommand(target, "Emulation.setDeviceMetricsOverride", {
     width: settings.viewportWidth,
     height: settings.viewportHeight,
@@ -137,6 +184,415 @@ async function setScrollbarsHidden(target, hidden) {
   } catch (error) {
     console.warn("GazeAware: unable to change scrollbar visibility", error);
   }
+}
+
+async function handleCreatedTab(tab) {
+  if (!tab.openerTabId) {
+    return;
+  }
+
+  const settings = await getSettings();
+  if (!settings.enabled) {
+    return;
+  }
+
+  const url = tab.pendingUrl || tab.url;
+  if (isWebUrl(url)) {
+    await redirectNewTabToOpener(tab.id, tab.openerTabId, url);
+    return;
+  }
+
+  pendingNewTabs.set(tab.id, tab.openerTabId);
+}
+
+async function redirectPendingNewTab(tabId, url) {
+  const openerTabId = pendingNewTabs.get(tabId);
+  if (!openerTabId) {
+    return;
+  }
+
+  pendingNewTabs.delete(tabId);
+  await redirectNewTabToOpener(tabId, openerTabId, url);
+}
+
+async function redirectNewTabToOpener(newTabId, openerTabId, url) {
+  if (!isWebUrl(url)) {
+    return;
+  }
+
+  await chrome.tabs.update(openerTabId, { url, active: true });
+  await chrome.tabs.remove(newTabId).catch(() => {});
+}
+
+async function schedulePageLog(tabId) {
+  const runId = (pageLogRuns.get(tabId) || 0) + 1;
+  pageLogRuns.set(tabId, runId);
+
+  await sleep(1600);
+
+  if (pageLogRuns.get(tabId) !== runId) {
+    return;
+  }
+
+  const tab = await chrome.tabs.get(tabId);
+  if (!tab || !isWebUrl(tab.url)) {
+    return;
+  }
+
+  await createPageLog(tabId, tab);
+}
+
+async function createPageLog(tabId, tab) {
+  const settings = await getSettings();
+  if (!settings.enabled) {
+    return;
+  }
+
+  const target = { tabId };
+  await applyViewportToTab(tabId, settings);
+  await waitForPageStable(target);
+
+  const tabNumber = getTabNumber(tabId);
+  const order = getNextOrder(tabId);
+  const ts = fileTimestamp();
+  const baseName = `web_tab${tabNumber}_${ts}`;
+  const jsonFile = `${baseName}.json`;
+  const domFile = `${baseName}.html`;
+  const cssFile = `${baseName}.css`;
+  const a11yFile = `${baseName}_a11y_tree.json`;
+  const screenshotFile = `${baseName}.png`;
+
+  const [title, domSnapshot, cssSnapshot, a11yTree, screenshotBase64] = await Promise.all([
+    getPageTitle(target, tab),
+    captureDomSnapshot(target),
+    captureCssSnapshot(target),
+    captureA11yTree(target),
+    captureScreenshot(target).catch((error) => {
+      console.warn("GazeAware: unable to capture page screenshot", error);
+      return null;
+    })
+  ]);
+
+  await writeWebLogFile(domFile, domSnapshot, "text/html;charset=utf-8");
+  await writeWebLogFile(cssFile, cssSnapshot, "text/css;charset=utf-8");
+  await writeWebLogFile(a11yFile, JSON.stringify(a11yTree, null, 2), "application/json;charset=utf-8");
+  if (screenshotBase64) {
+    await writeWebLogFile(screenshotFile, screenshotBase64, "image/png", { base64: true });
+  }
+
+  const createdAt = new Date().toISOString();
+  const pageLog = {
+    url: tab.url,
+    title,
+    order,
+    created_at: createdAt,
+    dom_file: domFile,
+    web_css: cssFile,
+    a11y_file: a11yFile,
+    interaction: [
+      {
+        type: "page",
+        timestamp: createdAt,
+        scroll: 0,
+        screenshot_file: screenshotBase64 ? screenshotFile : null
+      }
+    ]
+  };
+
+  pageLogsByTab.set(tabId, {
+    baseName,
+    jsonFile,
+    log: pageLog,
+    interactionCount: 0
+  });
+
+  await writePageLog(tabId);
+  await flushPendingInteractions(tabId);
+}
+
+async function appendInteraction(tabId, interaction) {
+  if (!tabId || !interaction || !interaction.type) {
+    return;
+  }
+
+  const settings = await getSettings();
+  if (!settings.enabled) {
+    return;
+  }
+
+  const entry = {
+    type: normalizeInteractionType(interaction.type),
+    timestamp: new Date().toISOString(),
+    scroll: Number.isFinite(Number(interaction.scroll)) ? Number(interaction.scroll) : 0,
+    screenshot_file: null
+  };
+
+  const pageState = pageLogsByTab.get(tabId);
+  if (!pageState) {
+    const pending = pendingInteractionsByTab.get(tabId) || [];
+    pending.push(entry);
+    pendingInteractionsByTab.set(tabId, pending);
+    return;
+  }
+
+  await appendInteractionToPageLog(tabId, entry);
+}
+
+async function flushPendingInteractions(tabId) {
+  const pending = pendingInteractionsByTab.get(tabId) || [];
+  pendingInteractionsByTab.delete(tabId);
+
+  for (const entry of pending) {
+    await appendInteractionToPageLog(tabId, entry);
+  }
+}
+
+async function appendInteractionToPageLog(tabId, entry) {
+  const pageState = pageLogsByTab.get(tabId);
+  if (!pageState) {
+    return;
+  }
+
+  if (entry.type === "scrollTop" || entry.type === "scrollBottom") {
+    pageState.interactionCount += 1;
+    const screenshotFile = `${pageState.baseName}_scroll_${String(pageState.interactionCount).padStart(3, "0")}.png`;
+    const screenshotBase64 = await captureScreenshot({ tabId }).catch((error) => {
+      console.warn("GazeAware: unable to capture interaction screenshot", error);
+      return null;
+    });
+    if (screenshotBase64) {
+      await writeWebLogFile(screenshotFile, screenshotBase64, "image/png", { base64: true });
+      entry.screenshot_file = screenshotFile;
+    }
+  }
+
+  pageState.log.interaction.push(entry);
+  await writePageLog(tabId);
+}
+
+function normalizeInteractionType(type) {
+  if (type === "scrollTop" || type === "scrollBottom" || type === "click") {
+    return type;
+  }
+  return "click";
+}
+
+async function writePageLog(tabId) {
+  const pageState = pageLogsByTab.get(tabId);
+  if (!pageState) {
+    return;
+  }
+
+  await writeWebLogFile(
+    pageState.jsonFile,
+    JSON.stringify(pageState.log, null, 2),
+    "application/json;charset=utf-8"
+  );
+}
+
+async function waitForPageStable(target) {
+  await sleep(900);
+  await sendCommand(target, "Runtime.evaluate", {
+    expression: `
+      new Promise((resolve) => {
+        let resolved = false;
+        const finish = () => {
+          if (resolved) return;
+          resolved = true;
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        };
+        if (document.readyState === "complete") {
+          if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(finish).catch(finish);
+          } else {
+            finish();
+          }
+        } else {
+          window.addEventListener("load", finish, { once: true });
+        }
+        setTimeout(finish, 1500);
+      })
+    `,
+    awaitPromise: true,
+    returnByValue: true
+  }).catch(() => {});
+  await sleep(300);
+}
+
+async function getPageTitle(target, tab) {
+  const result = await sendCommand(target, "Runtime.evaluate", {
+    expression: "document.title",
+    returnByValue: true
+  }).catch(() => null);
+  return result && result.result ? result.result.value || tab.title || "" : tab.title || "";
+}
+
+async function captureDomSnapshot(target) {
+  const result = await sendCommand(target, "Runtime.evaluate", {
+    expression: `document.documentElement ? "<!doctype html>\\n" + document.documentElement.outerHTML : ""`,
+    returnByValue: true
+  });
+  return result.result.value || "";
+}
+
+async function captureCssSnapshot(target) {
+  const result = await sendCommand(target, "Runtime.evaluate", {
+    expression: `
+      (() => {
+        const chunks = [];
+        for (const sheet of Array.from(document.styleSheets)) {
+          const label = sheet.href || "inline stylesheet";
+          try {
+            const rules = Array.from(sheet.cssRules || []).map((rule) => rule.cssText).join("\\n");
+            chunks.push("/* " + label + " */\\n" + rules);
+          } catch (error) {
+            chunks.push("/* " + label + " unavailable: " + error.message + " */");
+          }
+        }
+        return chunks.join("\\n\\n");
+      })()
+    `,
+    returnByValue: true
+  }).catch(() => null);
+  return result && result.result ? result.result.value || "" : "";
+}
+
+async function captureA11yTree(target) {
+  const result = await sendCommand(target, "Accessibility.getFullAXTree").catch((error) => ({
+    error: error.message,
+    nodes: []
+  }));
+  return result;
+}
+
+async function captureScreenshot(target) {
+  await waitForNextFrame(target);
+  const result = await sendCommand(target, "Page.captureScreenshot", {
+    format: "png",
+    fromSurface: true,
+    captureBeyondViewport: false
+  });
+  return result.data;
+}
+
+async function waitForNextFrame(target) {
+  await sendCommand(target, "Runtime.evaluate", {
+    expression: "new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
+    awaitPromise: true,
+    returnByValue: true
+  }).catch(() => {});
+}
+
+function getTabNumber(tabId) {
+  if (!tabNumbers.has(tabId)) {
+    tabNumbers.set(tabId, nextTabNumber);
+    nextTabNumber += 1;
+  }
+  return tabNumbers.get(tabId);
+}
+
+function getNextOrder(tabId) {
+  const order = (tabOrders.get(tabId) || 0) + 1;
+  tabOrders.set(tabId, order);
+  return order;
+}
+
+function fileTimestamp() {
+  return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+async function writeWebLogFile(filename, content, mimeType, options = {}) {
+  const rootHandle = await getStoredRootHandle().catch(() => null);
+  if (rootHandle && await hasReadWritePermission(rootHandle)) {
+    try {
+      await writeWithFileSystemAccess(rootHandle, filename, content, options);
+      return;
+    } catch (error) {
+      console.warn("GazeAware: unable to write through File System Access API", error);
+    }
+  }
+
+  await writeWithDownloads(filename, content, mimeType, options);
+}
+
+async function writeWithFileSystemAccess(rootHandle, filename, content, options = {}) {
+  const webLogsDir = await rootHandle.getDirectoryHandle("web_logs", { create: true });
+  const fileHandle = await webLogsDir.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(options.base64 ? base64ToUint8Array(content) : content);
+  await writable.close();
+}
+
+async function writeWithDownloads(filename, content, mimeType, options = {}) {
+  const url = options.base64
+    ? `data:${mimeType};base64,${content}`
+    : `data:${mimeType};base64,${textToBase64(content)}`;
+
+  await chrome.downloads.download({
+    url,
+    filename: `web_logs/${filename}`,
+    conflictAction: "overwrite",
+    saveAs: false
+  });
+}
+
+async function getStoredRootHandle() {
+  const db = await openDatabase();
+  const handle = await idbRequest(db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(ROOT_HANDLE_KEY));
+  db.close();
+  return handle || null;
+}
+
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(STORE_NAME);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function idbRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function hasReadWritePermission(handle) {
+  if (!handle.queryPermission) {
+    return true;
+  }
+
+  return (await handle.queryPermission({ mode: "readwrite" })) === "granted";
+}
+
+function textToBase64(text) {
+  return bytesToBase64(new TextEncoder().encode(text));
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8Array(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function isWebUrl(url) {

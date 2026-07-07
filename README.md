@@ -12,6 +12,8 @@
 - wheel, trackpad, touch scroll 차단
 - `ArrowDown` / `ArrowUp` 1회 입력당 일정 입력값 (기본`120px`) 즉시 이동
 - 키를 꾹 누를 때 발생하는 반복 scroll 차단
+- 새 탭 링크를 같은 탭 이동으로 강제
+- 페이지 로드와 interaction 로그 저장
 - popup에서 `User ID`, `Task ID`, viewport 설정 저장
 - 저장 시 아래 구조 생성
 
@@ -22,6 +24,20 @@ task_logs/
     <task_id>/
       setup.json
 ```
+
+웹 로그는 선택한 `Log Folder` 아래에 아래 구조로 저장됩니다. 폴더를 선택하지 않으면 Chrome 기본 다운로드 폴더 아래에 생성됩니다.
+
+```text
+web_logs/
+  web_tab<n>_<ts>.json
+  web_tab<n>_<ts>.html
+  web_tab<n>_<ts>.css
+  web_tab<n>_<ts>_a11y_tree.json
+  web_tab<n>_<ts>.png
+  web_tab<n>_<ts>_scroll_<k>.png
+```
+
+`web_tab<n>_<ts>.json`에는 `url`, `title`, `order`, `created_at`, `dom_file`, `web_css`, `a11y_file`, `interaction`이 저장됩니다. `interaction`에는 `page`, `scrollTop`, `scrollBottom`, `click` 이벤트가 append됩니다.
 
 ## Chrome 개발자 모드에서 사용하기
 
