@@ -202,6 +202,11 @@ async function notifyActiveTab() {
     return;
   }
 
+  const rootHandle = await getStoredRootHandle();
+  if (rootHandle) {
+    await ensureReadWritePermission(rootHandle);
+  }
+
   await chrome.runtime.sendMessage({ type: "GAZEAWARE_APPLY_VIEWPORT" });
 
   try {

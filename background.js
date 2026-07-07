@@ -2,7 +2,9 @@ const DEFAULT_SETTINGS = {
   enabled: false,
   viewportWidth: 1080,
   viewportHeight: 720,
-  scrollStep: 120
+  scrollStep: 120,
+  userId: "",
+  taskId: ""
 };
 
 const DEBUGGER_PROTOCOL_VERSION = "1.3";
@@ -17,7 +19,9 @@ const tabOrders = new Map();
 const pageLogsByTab = new Map();
 const pageLogRuns = new Map();
 const pendingInteractionsByTab = new Map();
+const pendingNavigationClicksByTab = new Map();
 const pendingNewTabs = new Map();
+const NAVIGATION_CLICK_TTL_MS = 10000;
 
 let nextTabNumber = 1;
 
@@ -35,6 +39,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "GAZEAWARE_INTERACTION") {
     appendInteraction(sender.tab && sender.tab.id, message.interaction)
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
+  if (message.type === "GAZEAWARE_NAVIGATION_CLICK") {
+    rememberNavigationClick(sender.tab && sender.tab.id, message)
       .then(() => sendResponse({ ok: true }))
       .catch((error) => sendResponse({ ok: false, error: error.message }));
     return true;
@@ -61,6 +72,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     return;
   }
 
+  if (changeInfo.url) {
+    confirmNavigationClick(tabId, changeInfo.url).catch(() => {});
+  }
+
   if (changeInfo.status !== "complete" || !isWebUrl(tab.url)) {
     return;
   }
@@ -83,6 +98,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   pageLogsByTab.delete(tabId);
   pageLogRuns.delete(tabId);
   pendingInteractionsByTab.delete(tabId);
+  pendingNavigationClicksByTab.delete(tabId);
   pendingNewTabs.delete(tabId);
 });
 
@@ -113,7 +129,9 @@ async function getSettings() {
     enabled: Boolean(stored.enabled),
     viewportWidth: toPositiveInteger(stored.viewportWidth, DEFAULT_SETTINGS.viewportWidth),
     viewportHeight: toPositiveInteger(stored.viewportHeight, DEFAULT_SETTINGS.viewportHeight),
-    scrollStep: toPositiveInteger(stored.scrollStep, DEFAULT_SETTINGS.scrollStep)
+    scrollStep: toPositiveInteger(stored.scrollStep, DEFAULT_SETTINGS.scrollStep),
+    userId: sanitizePathPart(stored.userId),
+    taskId: sanitizePathPart(stored.taskId)
   };
 }
 
@@ -322,7 +340,7 @@ async function appendInteraction(tabId, interaction) {
 
   const entry = {
     type: normalizeInteractionType(interaction.type),
-    timestamp: new Date().toISOString(),
+    timestamp: interaction.timestamp || new Date().toISOString(),
     scroll: Number.isFinite(Number(interaction.scroll)) ? Number(interaction.scroll) : 0,
     screenshot_file: null
   };
@@ -336,6 +354,41 @@ async function appendInteraction(tabId, interaction) {
   }
 
   await appendInteractionToPageLog(tabId, entry);
+}
+
+async function rememberNavigationClick(tabId, message) {
+  if (!tabId || !isWebUrl(message.href) || !isWebUrl(message.sourceUrl)) {
+    return;
+  }
+
+  pendingNavigationClicksByTab.set(tabId, {
+    href: message.href,
+    sourceUrl: message.sourceUrl,
+    timestamp: new Date().toISOString(),
+    createdAtMs: Date.now()
+  });
+}
+
+async function confirmNavigationClick(tabId, newUrl) {
+  const pendingClick = pendingNavigationClicksByTab.get(tabId);
+  if (!pendingClick || !isWebUrl(newUrl)) {
+    return;
+  }
+
+  pendingNavigationClicksByTab.delete(tabId);
+  if (Date.now() - pendingClick.createdAtMs > NAVIGATION_CLICK_TTL_MS) {
+    return;
+  }
+
+  if (sameUrlWithoutHash(pendingClick.sourceUrl, newUrl)) {
+    return;
+  }
+
+  await appendInteraction(tabId, {
+    type: "click",
+    timestamp: pendingClick.timestamp,
+    scroll: 0
+  });
 }
 
 async function flushPendingInteractions(tabId) {
@@ -375,6 +428,18 @@ function normalizeInteractionType(type) {
     return type;
   }
   return "click";
+}
+
+function sameUrlWithoutHash(left, right) {
+  try {
+    const leftUrl = new URL(left);
+    const rightUrl = new URL(right);
+    return leftUrl.origin === rightUrl.origin &&
+      leftUrl.pathname === rightUrl.pathname &&
+      leftUrl.search === rightUrl.search;
+  } catch (error) {
+    return left === right;
+  }
 }
 
 async function writePageLog(tabId) {
@@ -506,34 +571,34 @@ async function writeWebLogFile(filename, content, mimeType, options = {}) {
   if (rootHandle && await hasReadWritePermission(rootHandle)) {
     try {
       await writeWithFileSystemAccess(rootHandle, filename, content, options);
+      await chrome.storage.local.set({ webLogWriteStatus: "ok" });
       return;
     } catch (error) {
       console.warn("GazeAware: unable to write through File System Access API", error);
     }
   }
 
-  await writeWithDownloads(filename, content, mimeType, options);
+  await chrome.storage.local.set({
+    webLogWriteStatus: "missing_log_folder_permission",
+    webLogWriteStatusUpdatedAt: new Date().toISOString()
+  });
+  console.warn(`GazeAware: skipped ${filename}; choose Log Folder and press Save Setup to grant write permission.`);
 }
 
 async function writeWithFileSystemAccess(rootHandle, filename, content, options = {}) {
-  const webLogsDir = await rootHandle.getDirectoryHandle("web_logs", { create: true });
+  const settings = await getSettings();
+  if (!settings.userId || !settings.taskId) {
+    throw new Error("User ID and Task ID are required before writing web logs.");
+  }
+
+  const taskLogsDir = await rootHandle.getDirectoryHandle("task_logs", { create: true });
+  const userDir = await taskLogsDir.getDirectoryHandle(`User ${settings.userId}`, { create: true });
+  const taskDir = await userDir.getDirectoryHandle(settings.taskId, { create: true });
+  const webLogsDir = await taskDir.getDirectoryHandle("web_logs", { create: true });
   const fileHandle = await webLogsDir.getFileHandle(filename, { create: true });
   const writable = await fileHandle.createWritable();
   await writable.write(options.base64 ? base64ToUint8Array(content) : content);
   await writable.close();
-}
-
-async function writeWithDownloads(filename, content, mimeType, options = {}) {
-  const url = options.base64
-    ? `data:${mimeType};base64,${content}`
-    : `data:${mimeType};base64,${textToBase64(content)}`;
-
-  await chrome.downloads.download({
-    url,
-    filename: `web_logs/${filename}`,
-    conflictAction: "overwrite",
-    saveAs: false
-  });
 }
 
 async function getStoredRootHandle() {
@@ -569,19 +634,6 @@ async function hasReadWritePermission(handle) {
   return (await handle.queryPermission({ mode: "readwrite" })) === "granted";
 }
 
-function textToBase64(text) {
-  return bytesToBase64(new TextEncoder().encode(text));
-}
-
-function bytesToBase64(bytes) {
-  let binary = "";
-  const chunkSize = 0x8000;
-  for (let index = 0; index < bytes.length; index += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
-  }
-  return btoa(binary);
-}
-
 function base64ToUint8Array(base64) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -593,6 +645,13 @@ function base64ToUint8Array(base64) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function sanitizePathPart(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .replace(/\s+/g, "_");
 }
 
 function isWebUrl(url) {

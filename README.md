@@ -1,21 +1,25 @@
 # GazeAware Record Extension
 
-논문 실험용 웹 브라우징 recorder의 초기 Chrome extension 골격입니다. 현재 버전은 Chrome viewport emulation으로 웹페이지의 viewport 크기를 고정하고, 일반 wheel/touch scroll을 막은 뒤 `ArrowUp` / `ArrowDown` 입력으로만 일정량 이동하도록 만듭니다.
+This is an early Chrome extension scaffold for an experimental web-browsing recorder. It uses Chrome viewport emulation to keep the browsing viewport fixed, blocks normal wheel/touch scrolling, and allows scrolling only through `ArrowUp` and `ArrowDown`.
 
-## 현재 기능
+## Features
 
 - Chrome Manifest V3 extension
-- 기본 viewport 크기: `1080 x 720`
-- Chrome Debugger Protocol 기반 viewport emulation
-- 페이지 DOM/CSS에 script/style/frame을 삽입하지 않는 CSP 친화적 방식
-- native scrollbar 숨김
-- wheel, trackpad, touch scroll 차단
-- `ArrowDown` / `ArrowUp` 1회 입력당 일정 입력값 (기본`120px`) 즉시 이동
-- 키를 꾹 누를 때 발생하는 반복 scroll 차단
-- 새 탭 링크를 같은 탭 이동으로 강제
-- 페이지 로드와 interaction 로그 저장
-- popup에서 `User ID`, `Task ID`, viewport 설정 저장
-- 저장 시 아래 구조 생성
+- Default viewport size: `1080 x 720`
+- Chrome Debugger Protocol based viewport emulation
+- CSP-friendly page observation without injecting page DOM/CSS/script/frame overlays
+- Native scrollbar hiding
+- Wheel, trackpad, and touch scroll blocking
+- Instant `ArrowDown` / `ArrowUp` scroll by a fixed step, default `120px`
+- No repeated scrolling from holding an arrow key down
+- New-tab links are forced back into the same tab
+- Page-load and interaction logging
+- `click` is recorded only when a link click is confirmed to cause a real URL navigation
+- Popup setup for `User ID`, `Task ID`, and viewport settings
+
+## Output Structure
+
+Initial setup creates this task structure under the selected `Log Folder`:
 
 ```text
 task_logs/
@@ -23,40 +27,40 @@ task_logs/
     completed_tasks.txt
     <task_id>/
       setup.json
+      web_logs/
+        web_tab<n>_<ts>.json
+        web_tab<n>_<ts>.html
+        web_tab<n>_<ts>.css
+        web_tab<n>_<ts>_a11y_tree.json
+        web_tab<n>_<ts>.png
+        web_tab<n>_<ts>_scroll_<k>.png
 ```
 
-웹 로그는 선택한 `Log Folder` 아래에 아래 구조로 저장됩니다. 폴더를 선택하지 않으면 Chrome 기본 다운로드 폴더 아래에 생성됩니다.
+`web_tab<n>_<ts>.json` contains `url`, `title`, `order`, `created_at`, `dom_file`, `web_css`, `a11y_file`, and `interaction`.
 
-```text
-web_logs/
-  web_tab<n>_<ts>.json
-  web_tab<n>_<ts>.html
-  web_tab<n>_<ts>.css
-  web_tab<n>_<ts>_a11y_tree.json
-  web_tab<n>_<ts>.png
-  web_tab<n>_<ts>_scroll_<k>.png
-```
+The `interaction` array appends `page`, `scrollTop`, `scrollBottom`, and `click` events. `click` does not mean any background click; it is recorded only when a link click is followed by an actual URL navigation.
 
-`web_tab<n>_<ts>.json`에는 `url`, `title`, `order`, `created_at`, `dom_file`, `web_css`, `a11y_file`, `interaction`이 저장됩니다. `interaction`에는 `page`, `scrollTop`, `scrollBottom`, `click` 이벤트가 append됩니다.
+Web logs are written through the File System Access API. To avoid repeated Chrome download UI, `web_logs/` does not use the downloads API fallback. If folder permission is missing or expired, choose `Log Folder` again and press `Start`.
 
-## Chrome 개발자 모드에서 사용하기
+## Load In Chrome Developer Mode
 
-1. Chrome에서 `chrome://extensions/`를 엽니다.
-2. 오른쪽 위 `Developer mode`를 켭니다.
-3. `Load unpacked`를 누릅니다.
-4. 이 폴더를 선택합니다.
-   - `~/RecordExtension`
-5. extension 아이콘을 눌러 popup을 엽니다.
-6. `Log Folder`를 눌러 로그를 만들 로컬 폴더를 선택합니다.
-   - 이 프로젝트 폴더 안에 `task_logs/`를 만들고 싶다면 위 폴더를 그대로 선택하세요.
-   - 폴더를 선택하지 않으면 Chrome 기본 다운로드 폴더 아래에 `task_logs/` 파일들이 생성됩니다.
-7. `User ID`, `Task ID`를 입력하고 viewport toggle을 켠 뒤 `Save Setup`을 누릅니다.
-8. 실험할 웹페이지를 열거나 새로고침하면 viewport emulation이 적용됩니다.
+1. Open `chrome://extensions/` in Chrome.
+2. Turn on `Developer mode`.
+3. Click `Load unpacked`.
+4. Select this project folder:
+   - `/Users/choejaeyeong/Documents/GazeAware/RecordExtension`
+5. Open the extension popup.
+6. Click `Log Folder` and select the local folder where experiment logs should be written.
+   - Select this project folder if you want `task_logs/` to be created here.
+   - This step is required for silent `web_logs/` writing.
+7. Enter `User ID` and `Task ID`, turn on the viewport toggle, then click `Start`.
+8. Open or refresh the experiment web page.
+9. If proceed experiment to next `User` or `Task`, repeat 7 (enter id, turn on viewport toggle, then click `Start`)
 
-`debugger` 권한을 사용하므로 Chrome 상단에 이 extension이 브라우저를 디버깅한다는 안내가 표시될 수 있습니다. Walmart처럼 CSP가 강한 사이트에서 페이지 DOM을 직접 변경하지 않기 위한 선택입니다.
+Because this extension uses the `debugger` permission, Chrome may show a message that the extension is debugging the browser. This is expected and allows CSP-friendly viewport emulation, screenshots, DOM snapshots, CSS snapshots, and accessibility tree capture.
 
-코드를 수정한 뒤에는 `chrome://extensions/`에서 이 extension의 reload 버튼을 누르고, 실험할 웹페이지도 새로고침하세요.
+After editing extension code, click the reload button for this extension in `chrome://extensions/`, then refresh the experiment page.
 
-## 참고한 구조
+## Reference
 
-A11y-CUA `Computer-Use-Recorder`는 Windows desktop recorder이며 OBS, 로컬 Python 서버, accessibility tree, Chrome extension web logger를 함께 사용합니다. 이 프로젝트는 그중 task output structure와 Chrome extension loading 방식만 웹 전용 extension 형태로 가져온 초기 버전입니다.
+This project borrows the task-output idea and Chrome-extension loading workflow from A11y-CUA `Computer-Use-Recorder`. The original recorder targets Windows desktop behavior with OBS and a local Python server; this extension keeps the scope limited to web scenarios.

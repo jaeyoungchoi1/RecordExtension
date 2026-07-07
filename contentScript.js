@@ -115,14 +115,11 @@
     }
 
     const anchor = event.target.closest && event.target.closest("a[href]");
-    sendInteraction({
-      type: "click",
-      scroll: 0
-    });
-
-    if (!anchor || !anchor.href || isIgnoredHref(anchor.href)) {
+    if (!isNavigatingLink(anchor)) {
       return;
     }
+
+    sendNavigationClick(anchor.href);
 
     if (anchor.target || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
       event.preventDefault();
@@ -169,10 +166,41 @@
     return /^(javascript:|mailto:|tel:|sms:|#)/i.test(href);
   }
 
+  function isNavigatingLink(anchor) {
+    if (!anchor || !anchor.href) {
+      return false;
+    }
+
+    const rawHref = anchor.getAttribute("href") || "";
+    if (isIgnoredHref(rawHref.trim())) {
+      return false;
+    }
+
+    try {
+      const targetUrl = new URL(anchor.href, window.location.href);
+      const currentUrl = new URL(window.location.href);
+      const sameDocument =
+        targetUrl.origin === currentUrl.origin &&
+        targetUrl.pathname === currentUrl.pathname &&
+        targetUrl.search === currentUrl.search;
+      return !sameDocument || targetUrl.hash === "";
+    } catch (error) {
+      return false;
+    }
+  }
+
   function sendInteraction(interaction) {
     chrome.runtime.sendMessage({
       type: "GAZEAWARE_INTERACTION",
       interaction
+    }).catch(() => {});
+  }
+
+  function sendNavigationClick(href) {
+    chrome.runtime.sendMessage({
+      type: "GAZEAWARE_NAVIGATION_CLICK",
+      href,
+      sourceUrl: window.location.href
     }).catch(() => {});
   }
 
