@@ -10,12 +10,14 @@ This is an early Chrome extension scaffold for an experimental web-browsing reco
 - CSP-friendly page observation without injecting page DOM/CSS/script/frame overlays
 - Native scrollbar hiding
 - Wheel, trackpad, and touch scroll blocking
-- Instant `ArrowDown` / `ArrowUp` scroll by a fixed step, default `120px`
+- Instant `ArrowDown` / `ArrowUp` scroll by a fixed step, default `500px`
 - No repeated scrolling from holding an arrow key down
 - New-tab links are forced back into the same tab
 - Page-load and interaction logging
 - `click` is recorded only when a link click is confirmed to cause a real URL navigation
-- Popup setup for `User ID`, `Task ID`, viewport settings, and Start/Stop recording control
+- Popup setup for `User ID`, `Task ID`, viewport settings, and `Start/Stop` recording control
+
+![](popup.png)
 
 ## Output Structure
 
@@ -54,8 +56,8 @@ Web logs are written through the File System Access API. To avoid repeated Chrom
 5. Open the extension popup.
 6. Click `Log Folder` and select the local folder where experiment logs should be written.
    - Select this project folder if you want `task_logs/` to be created here.
-   - This step is required for silent `web_logs/` writing.
-7. Enter `User ID` and `Task ID`, configure the `Viewport` section, turn on the viewport toggle if needed, then click `Start`.
+   - This step is required for background `web_logs/` writing.
+7. Enter `User ID` and `Task ID`, configure the `Viewport` section, turn on the viewport toggle if needed, then click `Start`, and wait for the "recording" announcement.
 8. Open or refresh the experiment web page.
 9. Click `Stop` when the recording session should end.
 10. To proceed to the next `User` or `Task`, repeat step 7 with the new IDs and click `Start`.
