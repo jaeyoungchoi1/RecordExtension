@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GazeAware Recorder</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <h1>GazeAware</h1>
+        <label class="switch" title="실험 뷰포트 켜기">
+          <input id="enabled" type="checkbox">
+          <span></span>
+        </label>
+      </header>
+
+      <section class="section">
+        <label>
+          <span>User ID</span>
+          <input id="userId" type="text" inputmode="numeric" autocomplete="off" placeholder="1">
+        </label>
+        <label>
+          <span>Task ID</span>
+          <input id="taskId" type="text" autocomplete="off" placeholder="task_001">
+        </label>
+      </section>
+
+      <section class="section grid">
+        <label>
+          <span>Width</span>
+          <input id="viewportWidth" type="number" min="1" step="1" value="1080">
+        </label>
+        <label>
+          <span>Height</span>
+          <input id="viewportHeight" type="number" min="1" step="1" value="720">
+        </label>
+        <label>
+          <span>Scroll Step</span>
+          <input id="scrollStep" type="number" min="1" step="1" value="120">
+        </label>
+      </section>
+
+      <section class="section">
+        <button id="chooseFolder" class="secondary" type="button">Log Folder</button>
+        <p id="folderStatus" class="status">No folder selected</p>
+      </section>
+
+      <footer class="footer">
+        <button id="saveSetup" class="primary" type="button">Save Setup</button>
+        <p id="message" class="message" role="status"></p>
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
