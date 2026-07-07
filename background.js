@@ -96,6 +96,7 @@ async function applyViewportToTab(tabId, settings) {
     width: settings.viewportWidth,
     height: settings.viewportHeight
   });
+  await setScrollbarsHidden(target, true);
 }
 
 async function clearViewportForTab(tabId) {
@@ -104,6 +105,7 @@ async function clearViewportForTab(tabId) {
     return;
   }
 
+  await setScrollbarsHidden(target, false);
   await sendCommand(target, "Emulation.clearDeviceMetricsOverride");
   await detachDebugger(target);
 }
@@ -127,6 +129,14 @@ async function detachDebugger(target) {
 
 async function sendCommand(target, method, params = {}) {
   return await chrome.debugger.sendCommand(target, method, params);
+}
+
+async function setScrollbarsHidden(target, hidden) {
+  try {
+    await sendCommand(target, "Emulation.setScrollbarsHidden", { hidden });
+  } catch (error) {
+    console.warn("GazeAware: unable to change scrollbar visibility", error);
+  }
 }
 
 function isWebUrl(url) {

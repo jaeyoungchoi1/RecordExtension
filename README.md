@@ -8,6 +8,7 @@
 - 기본 viewport 크기: `1080 x 720`
 - Chrome Debugger Protocol 기반 viewport emulation
 - 페이지 DOM/CSS에 script/style/frame을 삽입하지 않는 CSP 친화적 방식
+- native scrollbar 숨김
 - wheel, trackpad, touch scroll 차단
 - `ArrowDown` / `ArrowUp` 1회 입력당 일정 입력값 (기본`120px`) 즉시 이동
 - 키를 꾹 누를 때 발생하는 반복 scroll 차단
