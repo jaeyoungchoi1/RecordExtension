@@ -7,7 +7,6 @@ const DEFAULT_SETTINGS = {
 
 const DEBUGGER_PROTOCOL_VERSION = "1.3";
 const attachedTabs = new Set();
-const centeredCssByTab = new Map();
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || message.type !== "GAZEAWARE_APPLY_VIEWPORT") {
@@ -42,7 +41,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   attachedTabs.delete(tabId);
-  centeredCssByTab.delete(tabId);
 });
 
 chrome.debugger.onDetach.addListener((source) => {
@@ -94,12 +92,14 @@ async function applyViewportToTab(tabId, settings) {
     positionY: 0,
     scale: 1
   });
-  await applyCenteringCss(tabId, settings);
+  await sendCommand(target, "Emulation.setVisibleSize", {
+    width: settings.viewportWidth,
+    height: settings.viewportHeight
+  });
 }
 
 async function clearViewportForTab(tabId) {
   const target = { tabId };
-  await clearCenteringCss(tabId);
   if (!attachedTabs.has(tabId)) {
     return;
   }
@@ -127,59 +127,6 @@ async function detachDebugger(target) {
 
 async function sendCommand(target, method, params = {}) {
   return await chrome.debugger.sendCommand(target, method, params);
-}
-
-async function applyCenteringCss(tabId, settings) {
-  await clearCenteringCss(tabId);
-
-  const tab = await chrome.tabs.get(tabId);
-  const tabWidth = toPositiveInteger(tab.width, settings.viewportWidth);
-  const tabHeight = toPositiveInteger(tab.height, settings.viewportHeight);
-  const offsetX = Math.max(0, Math.floor((tabWidth - settings.viewportWidth) / 2));
-  const offsetY = Math.max(0, Math.floor((tabHeight - settings.viewportHeight) / 2));
-  const css = buildCenteringCss(offsetX, offsetY);
-
-  await chrome.scripting.insertCSS({
-    target: { tabId },
-    css,
-    origin: "USER"
-  });
-  centeredCssByTab.set(tabId, css);
-}
-
-async function clearCenteringCss(tabId) {
-  const css = centeredCssByTab.get(tabId);
-  if (!css) {
-    return;
-  }
-
-  try {
-    await chrome.scripting.removeCSS({
-      target: { tabId },
-      css,
-      origin: "USER"
-    });
-  } catch (error) {
-    // Programmatic CSS is usually cleared on navigation, so removal can fail benignly.
-  } finally {
-    centeredCssByTab.delete(tabId);
-  }
-}
-
-function buildCenteringCss(offsetX, offsetY) {
-  return `
-    html {
-      background: #101418 !important;
-      overflow: hidden !important;
-      overscroll-behavior: none !important;
-    }
-
-    body {
-      transform: translate(${offsetX}px, ${offsetY}px) !important;
-      transform-origin: top left !important;
-      overscroll-behavior: none !important;
-    }
-  `;
 }
 
 function isWebUrl(url) {

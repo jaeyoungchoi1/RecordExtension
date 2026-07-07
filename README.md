@@ -7,8 +7,7 @@
 - Chrome Manifest V3 extension
 - 기본 viewport 크기: `1080 x 720`
 - Chrome Debugger Protocol 기반 viewport emulation
-- 페이지 DOM에 script/frame을 삽입하지 않는 CSP 친화적 방식
-- extension CSS 주입을 통한 viewport 중앙 정렬
+- 페이지 DOM/CSS에 script/style/frame을 삽입하지 않는 CSP 친화적 방식
 - wheel, trackpad, touch scroll 차단
 - `ArrowDown` / `ArrowUp` 1회 입력당 일정 입력값 (기본`120px`) 즉시 이동
 - 키를 꾹 누를 때 발생하는 반복 scroll 차단
@@ -35,7 +34,7 @@ task_logs/
    - 이 프로젝트 폴더 안에 `task_logs/`를 만들고 싶다면 위 폴더를 그대로 선택하세요.
    - 폴더를 선택하지 않으면 Chrome 기본 다운로드 폴더 아래에 `task_logs/` 파일들이 생성됩니다.
 7. `User ID`, `Task ID`를 입력하고 viewport toggle을 켠 뒤 `Save Setup`을 누릅니다.
-8. 실험할 웹페이지를 열거나 새로고침하면 viewport emulation과 중앙 정렬이 적용됩니다.
+8. 실험할 웹페이지를 열거나 새로고침하면 viewport emulation이 적용됩니다.
 
 `debugger` 권한을 사용하므로 Chrome 상단에 이 extension이 브라우저를 디버깅한다는 안내가 표시될 수 있습니다. Walmart처럼 CSP가 강한 사이트에서 페이지 DOM을 직접 변경하지 않기 위한 선택입니다.
 
