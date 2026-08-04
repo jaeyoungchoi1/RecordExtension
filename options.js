@@ -94,7 +94,7 @@ function idbTransaction(transaction) {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error || new Error("Transaction aborted"));
   });
 }
 
@@ -106,7 +106,12 @@ async function ensureReadWritePermission(handle) {
   if ((await handle.queryPermission(options)) === "granted") {
     return true;
   }
-  return (await handle.requestPermission(options)) === "granted";
+  try {
+    return (await handle.requestPermission(options)) === "granted";
+  } catch (error) {
+    console.warn("requestPermission error:", error);
+    return false;
+  }
 }
 
 async function queryReadWritePermission(handle) {

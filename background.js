@@ -647,11 +647,43 @@ async function writeWebLogFile(filename, content, mimeType, options = {}) {
     }
   }
 
-  await chrome.storage.local.set({
-    webLogWriteStatus: "missing_log_folder_permission",
-    webLogWriteStatusUpdatedAt: new Date().toISOString()
+  try {
+    await writeWithDownloads(filename, content, mimeType, options);
+    await chrome.storage.local.set({ webLogWriteStatus: "fallback_downloads" });
+  } catch (error) {
+    await chrome.storage.local.set({
+      webLogWriteStatus: "missing_log_folder_permission",
+      webLogWriteStatusUpdatedAt: new Date().toISOString()
+    });
+    console.warn(`GazeAware: skipped ${filename}; open Log Folder settings and grant write permission, then press Start. Error:`, error);
+  }
+}
+
+async function writeWithDownloads(filename, content, mimeType, options = {}) {
+  const settings = await getSettings();
+  if (!settings.userId || !settings.taskId) {
+    throw new Error("User ID and Task ID are required before writing web logs.");
+  }
+
+  const path = `task_logs/User ${settings.userId}/${settings.taskId}/web_logs/${filename}`;
+  let dataUrl;
+  if (options.base64) {
+    dataUrl = `data:${mimeType};base64,${content}`;
+  } else {
+    const bytes = new TextEncoder().encode(content);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i += 8192) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + 8192, bytes.byteLength)));
+    }
+    dataUrl = `data:${mimeType};base64,${btoa(binary)}`;
+  }
+
+  await chrome.downloads.download({
+    url: dataUrl,
+    filename: path,
+    conflictAction: "overwrite",
+    saveAs: false
   });
-  console.warn(`GazeAware: skipped ${filename}; open Log Folder settings and grant write permission, then press Start.`);
 }
 
 async function writeWithFileSystemAccess(rootHandle, filename, content, options = {}) {
