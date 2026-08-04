@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GazeAware Recorder Settings</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body class="options-body">
+    <main class="app options-app">
+      <header class="header">
+        <h1>GazeAware Settings</h1>
+      </header>
+
+      <section class="section">
+        <p class="help-text">
+          Choose a stable log folder for task setup files and background web logs.
+          This page stays open while Chrome grants write permission.
+        </p>
+        <button id="chooseFolder" class="primary" type="button">Choose Log Folder</button>
+        <p id="folderStatus" class="status">No folder selected</p>
+        <p id="message" class="message options-message" role="status"></p>
+      </section>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

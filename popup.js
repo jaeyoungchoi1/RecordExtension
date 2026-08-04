@@ -48,20 +48,11 @@ async function initialize() {
 async function chooseLogFolder() {
   clearMessage();
 
-  if (!window.showDirectoryPicker) {
-    setMessage("Folder picker unavailable");
-    return;
-  }
-
   try {
-    const handle = await window.showDirectoryPicker({ mode: "readwrite" });
-    await storeRootHandle(handle);
-    await updateFolderStatus();
-    setMessage("Folder saved");
+    await chrome.runtime.openOptionsPage();
+    setMessage("Opened folder settings");
   } catch (error) {
-    if (error.name !== "AbortError") {
-      setMessage(error.message);
-    }
+    setMessage(error.message);
   }
 }
 
@@ -295,7 +286,21 @@ async function writeFileHandleText(fileHandle, text) {
 
 async function updateFolderStatus() {
   const handle = await getStoredRootHandle();
-  fields.folderStatus.textContent = handle ? `Selected: ${handle.name}` : "No folder selected";
+  if (!handle) {
+    fields.folderStatus.textContent = "No folder selected";
+    return;
+  }
+
+  const permission = await queryReadWritePermission(handle);
+  const permissionText = permission === "granted" ? "write permission granted" : "open settings to grant permission";
+  fields.folderStatus.textContent = `Selected: ${handle.name} (${permissionText})`;
+}
+
+async function queryReadWritePermission(handle) {
+  if (!handle || !handle.queryPermission) {
+    return "granted";
+  }
+  return await handle.queryPermission({ mode: "readwrite" });
 }
 
 function setMessage(text) {

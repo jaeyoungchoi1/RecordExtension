@@ -651,7 +651,7 @@ async function writeWebLogFile(filename, content, mimeType, options = {}) {
     webLogWriteStatus: "missing_log_folder_permission",
     webLogWriteStatusUpdatedAt: new Date().toISOString()
   });
-  console.warn(`GazeAware: skipped ${filename}; choose Log Folder and press Save Setup to grant write permission.`);
+  console.warn(`GazeAware: skipped ${filename}; open Log Folder settings and grant write permission, then press Start.`);
 }
 
 async function writeWithFileSystemAccess(rootHandle, filename, content, options = {}) {

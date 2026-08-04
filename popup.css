@@ -12,8 +12,18 @@ body {
   margin: 0;
 }
 
+.options-body {
+  width: auto;
+  min-width: 420px;
+  max-width: 640px;
+}
+
 .app {
   padding: 14px;
+}
+
+.options-app {
+  padding: 24px;
 }
 
 .header,
@@ -133,6 +143,16 @@ button:disabled {
 .message {
   flex: 1;
   text-align: right;
+}
+
+.options-message {
+  text-align: left;
+}
+
+.help-text {
+  margin: 0;
+  color: #52616a;
+  line-height: 1.45;
 }
 
 .footer-actions {

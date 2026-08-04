@@ -54,7 +54,7 @@ Web logs are written through the File System Access API. To avoid repeated Chrom
 4. Select this project folder:
    - `/Users/choejaeyeong/Documents/GazeAware/RecordExtension`
 5. Open the extension popup.
-6. Click `Log Folder` and select the local folder where experiment logs should be written.
+6. Click `Log Folder`, which opens the extension settings page, then select the local folder where experiment logs should be written.
    - Select this project folder if you want `task_logs/` to be created here.
    - This step is required for background `web_logs/` writing.
 7. Enter `User ID` and `Task ID`, configure the `Viewport` section, turn on the viewport toggle if needed, then click `Start`, and wait for the "recording" announcement.

@@ -7,6 +7,7 @@
     "default_title": "GazeAware Recorder",
     "default_popup": "popup.html"
   },
+  "options_page": "options.html",
   "permissions": [
     "debugger",
     "downloads",
