@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GazeAware Recorder Smoke Test</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header><h1>Recorder smoke test</h1><p id="routeStatus">Route: home</p></header>
+    <main>
+      <section>
+        <h2>Filter and input</h2>
+        <label><input id="available" type="checkbox"> Available only</label>
+        <label><input name="distance" type="radio" value="near"> Near</label>
+        <label><input name="distance" type="radio" value="far"> Far</label>
+        <form id="searchForm">
+          <label for="query">Query</label>
+          <input id="query" name="query" autocomplete="off">
+          <button type="submit">Apply query</button>
+        </form>
+        <p id="filterStatus" aria-live="polite">No filters applied</p>
+      </section>
+      <section>
+        <h2>Dynamic states</h2>
+        <button id="spaButton" type="button">Open SPA results</button>
+        <button id="modalButton" type="button">Open details modal</button>
+        <button id="selectButton" type="button" aria-pressed="false">Select candidate A</button>
+        <a href="page2.html">Open full-navigation page</a>
+      </section>
+      <section class="tall">
+        <h2>Scroll calibration area</h2>
+        <p>Use ArrowDown and ArrowUp. Wheel and trackpad scrolling should be blocked.</p>
+      </section>
+    </main>
+    <dialog id="detailsDialog">
+      <h2>Candidate details</h2>
+      <p>Refundable, 1.2 km away, accessible entrance.</p>
+      <button id="closeModal" type="button">Close modal</button>
+    </dialog>
+    <script src="app.js"></script>
+  </body>
+</html>

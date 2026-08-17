@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GazeAware Record Extension",
   "description": "Experimental web-browsing viewport and task setup recorder.",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "action": {
     "default_title": "GazeAware Recorder",
     "default_popup": "popup.html"
@@ -11,9 +11,12 @@
   "permissions": [
     "debugger",
     "downloads",
+    "offscreen",
     "scripting",
     "storage",
-    "tabs"
+    "tabCapture",
+    "tabs",
+    "webNavigation"
   ],
   "background": {
     "service_worker": "background.js"

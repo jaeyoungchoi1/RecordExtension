@@ -1,0 +1,42 @@
+// Recorder-facing task catalog generated from task-launcher-netlify/app.js.
+// Participant-facing identity is the stable list position (Task 01-30).
+globalThis.GAZEAWARE_TASK_CATALOG_VERSION = "task-launcher-netlify-2026-08-17";
+globalThis.GAZEAWARE_TASKS = [
+  ["Wikipedia", "Plant cell membrane", "Find the specific membrane in a plant cell that contains the proteins responsible for photosynthesis.", "https://en.wikipedia.org/wiki/Plant_cell"],
+  ["Wikipedia", "Ancient Olympic training", "Find what kinds of preparation and training athletes underwent for the ancient Olympic Games.", "https://en.wikipedia.org/wiki/Ancient_Olympic_Games"],
+  ["Gardeners", "Fertilize a garden", "Find guidance on how to fertilize a garden.", "https://www.gardeners.com/"],
+  ["Sip and Feast", "Shrimp pasta recipe", "Find a pasta recipe that includes shrimp.", "https://www.sipandfeast.com/"],
+  ["CHI 2026", "Workshop proposal page limit", "Find the maximum number of pages allowed for a CHI 2026 workshop proposal.", "https://chi2026.acm.org/"],
+  ["BBC News", "Latest news on India", "Find the latest news about India.", "https://www.bbc.com/news"],
+  ["H-E-B", "Premium chocolate ice cream", "Find the most expensive one-pint chocolate ice cream available for curbside pickup.", "https://www.heb.com/"],
+  ["H-E-B", "Brownie mix under $4", "Find a brownie mix that is at least 18 oz and costs less than $4.", "https://www.heb.com/"],
+  ["Amazon", "Highly rated board game", "Find a board game with at least 30,000 ratings and a rating of 4.5 stars or higher, then leave its product detail page open.", "https://www.amazon.com/"],
+  ["Amazon", "Gift for a colleague", "Find a birthday gift for a 30-year-old colleague who enjoys cooking, with a budget of around $50.", "https://www.amazon.com/"],
+  ["Reddit r/4kTV", "OLED TV reviews", "Find reviews of OLED TVs.", "https://www.reddit.com/r/4kTV/"],
+  ["Reddit", "Cafes near the University of Utah", "Find cafes near the University of Utah. You may use “cafes near University of Utah” as a starting search query.", "https://www.reddit.com/"],
+  ["CHI 2026", "Workshop proposal deadline", "Find the submission deadline for a workshop proposal at the current CHI conference.", "https://chi2026.acm.org/"],
+  ["CHI 2026", "Information for a first-time CHI attendee", "Explore the CHI 2026 website and identify information that would be especially useful to a first-time CHI attendee.", "https://chi2026.acm.org/"],
+  ["Booking.com", "Cheapest room in Boston", "Find the cheapest available room in downtown Boston for next weekend.", "https://www.booking.com/"],
+  ["Reddit r/technology", "Today’s top technology post", "Open today’s top post from r/technology.", "https://www.reddit.com/r/technology/"],
+  ["Reddit", "Accessibility app discussion", "Find the most recent popular discussion about accessibility apps.", "https://www.reddit.com/"],
+  ["YouTube", "Latest MKBHD video", "Find and play the latest MKBHD video.", "https://www.youtube.com/"],
+  ["YouTube", "Spaghetti cooking tutorial", "Find the shortest and most-viewed spaghetti cooking tutorial.", "https://www.youtube.com/"],
+  ["Target", "Highest-rated scented candle", "Add the scented candle with the highest rating to your cart.", "https://www.target.com/"],
+  ["CHI 2026", "Choose a subcommittee for a scanpath paper", "Determine which CHI 2026 subcommittee would be the best fit for a paper on scanpath prediction.", "https://chi2026.acm.org/"],
+  ["Apple", "Apple Intelligence tools", "On the MacBook Air pages, find information about the tools that Apple Intelligence is built into.", "https://www.apple.com/macbook-air/"],
+  ["Expedia", "Cheapest Austin–New York flight", "Find the cheapest round-trip flight from Austin to New York for September 2–4.", "https://www.expedia.com/Flights"],
+  ["University of Utah", "Choose a potential faculty advisor", "You plan to apply to the Computer Science PhD program. Find two or three faculty members whose work matches your interests in HCI, accessible computing, and computer vision, then choose the one you would most want to contact.", "https://www.cs.utah.edu/graduate/prospective-students/admissions/research-areas/"],
+  ["University of Utah", "Compare MS and PhD funding", "Compare the financial support available to MS and PhD students in the Kahlert School of Computing. Check RA, TA, and assistantship options, tuition benefits, and whether support is guaranteed for new students.", "https://www.cs.utah.edu/graduate/prospective-students/admissions/graduate-financial-support-and-costs/"],
+  ["Amazon", "Products for a new home office", "Browse Amazon and choose five products that would be useful for setting up a new home office.", "https://www.amazon.com/"],
+  ["University of Utah", "Graduate application deadlines", "Starting from the University of Utah Kahlert School of Computing homepage, navigate to the page that explains graduate application deadlines and leave that page open.", "https://www.cs.utah.edu/"],
+  ["Google Search", "Return to the search results", "Search for an article about how to do a literature review, open the first result, then return to the search results because the article is not helpful.", "https://www.google.com/"],
+  ["International Mathematical Olympiad", "Latest IMO contest problems", "Find and open the problem set from the latest International Mathematical Olympiad.", "https://www.imo-official.org/problems/"],
+  ["YouTube", "Switch to the next lecture video", "Search YouTube for “Machine Learning and Generative AI,” play the first suggested video for a few seconds, then skip to the next video.", "https://www.youtube.com/"],
+].map(([site, title, prompt, url], index) => Object.freeze({
+  taskId: String(index + 1).padStart(2, "0"),
+  taskNumber: index + 1,
+  site,
+  title,
+  prompt,
+  url
+}));

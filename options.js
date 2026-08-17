@@ -2,6 +2,7 @@ const DB_NAME = "gazeaware-recorder";
 const DB_VERSION = 1;
 const STORE_NAME = "handles";
 const ROOT_HANDLE_KEY = "logRoot";
+const DOWNLOAD_ROOT = "GazeAwareRecorder";
 
 const fields = {
   chooseFolder: document.getElementById("chooseFolder"),
@@ -20,7 +21,14 @@ async function chooseLogFolder() {
   clearMessage();
 
   if (!window.showDirectoryPicker) {
-    setMessage("Folder picker unavailable in this browser");
+    await chrome.storage.local.set({
+      storageBackend: "downloads",
+      downloadRoot: DOWNLOAD_ROOT,
+      logRootName: `Downloads/${DOWNLOAD_ROOT}`,
+      logRootUpdatedAt: new Date().toISOString()
+    });
+    await updateFolderStatus();
+    setMessage("Brave fallback enabled. Recordings will be written under Downloads/GazeAwareRecorder.");
     return;
   }
 
@@ -37,6 +45,7 @@ async function chooseLogFolder() {
 
     await storeRootHandle(handle);
     await chrome.storage.local.set({
+      storageBackend: "filesystem",
       logRootName: handle.name,
       logRootUpdatedAt: new Date().toISOString()
     });
@@ -122,6 +131,11 @@ async function queryReadWritePermission(handle) {
 }
 
 async function updateFolderStatus(providedHandle = null) {
+  const stored = await chrome.storage.local.get({ storageBackend: null, downloadRoot: DOWNLOAD_ROOT });
+  if (stored.storageBackend === "downloads") {
+    fields.folderStatus.textContent = `Selected: Downloads/${stored.downloadRoot} (automatic write)`;
+    return;
+  }
   const handle = providedHandle || await getStoredRootHandle();
   if (!handle) {
     fields.folderStatus.textContent = "No folder selected";

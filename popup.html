@@ -14,37 +14,28 @@
 
       <section class="section setup-grid">
         <label>
-          <span>User ID</span>
+          <span>Participant ID</span>
           <input id="userId" type="text" inputmode="numeric" autocomplete="off" placeholder="1">
         </label>
         <label>
-          <span>Task ID</span>
-          <input id="taskId" type="text" autocomplete="off" placeholder="task_001">
+          <span>Task</span>
+          <select id="taskId" aria-describedby="taskSummary">
+            <option value="">Select a task</option>
+          </select>
         </label>
+      </section>
+
+      <section id="taskSummary" class="section task-summary" aria-live="polite">
+        <strong id="taskSummaryTitle">Choose one of the launcher tasks.</strong>
+        <span id="taskSummaryPrompt"></span>
       </section>
 
       <section class="section viewport-section">
         <div class="section-header">
           <span>Viewport</span>
-          <label class="switch" title="Enable experiment viewport">
-            <input id="enabled" type="checkbox">
-            <span></span>
-          </label>
+          <span id="viewportStatus" class="viewport-status">Detecting current tab…</span>
         </div>
-        <div class="grid">
-          <label>
-            <span>Width</span>
-            <input id="viewportWidth" type="number" min="1" step="1" value="1080">
-          </label>
-          <label>
-            <span>Height</span>
-            <input id="viewportHeight" type="number" min="1" step="1" value="720">
-          </label>
-          <label>
-            <span>Scroll Step</span>
-            <input id="scrollStep" type="number" min="1" step="1" value="500">
-          </label>
-        </div>
+        <p class="help-text compact">The current web-content size is recorded at Start. Keep the browser window unchanged during the session.</p>
       </section>
 
       <section class="section">
@@ -52,15 +43,101 @@
         <p id="folderStatus" class="status">No folder selected</p>
       </section>
 
+      <details class="advanced">
+        <summary>Advanced settings</summary>
+        <div class="advanced-body">
+          <section class="section setup-grid">
+            <label>
+              <span>Environment</span>
+              <select id="environmentType">
+                <option value="real">Real website</option>
+                <option value="synthetic">Synthetic website</option>
+              </select>
+            </label>
+            <label>
+              <span>Task Version</span>
+              <input id="taskVersion" type="text" autocomplete="off">
+            </label>
+          </section>
+
+          <section class="section">
+            <label>
+              <span>Task Prompt</span>
+              <textarea id="taskPrompt" rows="3"></textarea>
+            </label>
+          </section>
+
+          <section id="syntheticFields" class="section setup-grid" hidden>
+            <label><span>App Version</span><input id="syntheticAppVersion" type="text"></label>
+            <label><span>Dataset Version</span><input id="datasetVersion" type="text"></label>
+            <label><span>Dataset Seed</span><input id="datasetSeed" type="text"></label>
+            <label><span>DB Start Snapshot</span><input id="dbStartSnapshotId" type="text"></label>
+          </section>
+
+          <section class="section">
+            <div class="setup-grid">
+              <label>
+                <span>Viewport Mode</span>
+                <select id="viewportMode">
+                  <option value="adaptive">Current tab (recommended)</option>
+                  <option value="manual">Manual size</option>
+                </select>
+              </label>
+              <label>
+                <span>Scroll Step</span>
+                <input id="scrollStep" type="number" min="1" step="1" value="200">
+              </label>
+            </div>
+            <div id="manualViewportFields" class="setup-grid" hidden>
+              <label><span>Width</span><input id="viewportWidth" type="number" min="1" step="1" value="1080"></label>
+              <label><span>Height</span><input id="viewportHeight" type="number" min="1" step="1" value="720"></label>
+            </div>
+            <label class="checkbox-row">
+              <input id="enabled" type="checkbox" checked>
+              <span>Use Arrow Up/Down scrolling (recommended)</span>
+            </label>
+          </section>
+        </div>
+      </details>
+
+      <section id="outcomeSection" class="section outcome-section" hidden>
+        <div>
+          <h2>Finish task</h2>
+          <p class="help-text compact">Enter the task result before ending the recording.</p>
+        </div>
+        <label>
+          <span>Did you complete the task?</span>
+          <select id="outcomeStatus" required>
+            <option value="">Select an outcome</option>
+            <option value="success">Yes</option>
+            <option value="failure">No</option>
+            <option value="aborted">Aborted</option>
+          </select>
+        </label>
+        <label>
+          <span>Final answer or selection</span>
+          <textarea id="finalChoice" rows="2" placeholder="Answer, selected item, or URL if needed"></textarea>
+        </label>
+        <label>
+          <span>Why did you choose it? (optional)</span>
+          <textarea id="outcomeNotes" rows="2"></textarea>
+        </label>
+        <details class="outcome-extra">
+          <summary>Synthetic DB reference</summary>
+          <label><span>DB End Snapshot (optional)</span><input id="dbEndSnapshotId" type="text"></label>
+        </details>
+      </section>
+
       <footer class="footer">
         <div class="footer-actions">
           <button id="saveSetup" class="primary" type="button">Start</button>
-          <button id="stopRecording" class="secondary" type="button">Stop</button>
+          <button id="stopRecording" class="primary finish-button" type="button" hidden>Save result &amp; Finish</button>
         </div>
         <p id="message" class="message" role="status"></p>
       </footer>
     </main>
 
+    <script src="taskCatalog.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
