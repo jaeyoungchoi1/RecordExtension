@@ -980,7 +980,7 @@ async function restoreActiveSession() {
   activeSession = {
     ...stored.activeSession,
     queue: Promise.resolve(),
-    rootHandle,
+    rootHandle: storage.rootHandle,
     writeFailures: Array.isArray(stored.activeSession.writeFailures) ? stored.activeSession.writeFailures : []
   };
 }

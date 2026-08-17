@@ -4,6 +4,10 @@ import vm from "node:vm";
 import { webcrypto } from "node:crypto";
 
 const listeners = () => ({ addListener() {} });
+const storageState = {};
+const storedRootHandle = {
+  queryPermission: async () => "granted",
+};
 const chrome = {
   runtime: {
     onMessage: listeners(),
@@ -12,8 +16,8 @@ const chrome = {
   },
   storage: {
     local: {
-      get: async (defaults) => defaults,
-      set: async () => {},
+      get: async (defaults) => ({ ...defaults, ...storageState }),
+      set: async (values) => Object.assign(storageState, values),
     },
   },
   tabs: {
@@ -41,7 +45,18 @@ const context = vm.createContext({
       queueMicrotask(() => {
         request.result = {
           objectStoreNames: { contains: () => true },
-          transaction: () => ({ objectStore: () => ({ get: () => ({}) }) }),
+          transaction: () => ({
+            objectStore: () => ({
+              get: () => {
+                const getRequest = {};
+                queueMicrotask(() => {
+                  getRequest.result = storedRootHandle;
+                  getRequest.onsuccess?.();
+                });
+                return getRequest;
+              },
+            }),
+          }),
           close() {},
         };
         request.onsuccess?.();
@@ -53,6 +68,21 @@ const context = vm.createContext({
 
 const source = await readFile(new URL("../background.js", import.meta.url), "utf8");
 vm.runInContext(source, context, { filename: "background.js" });
+await new Promise((resolve) => setImmediate(resolve));
+
+Object.assign(storageState, {
+  storageBackend: "filesystem",
+  isRecording: true,
+  activeSession: {
+    sessionId: "restored-session",
+    participantId: "1",
+    taskId: "01",
+    writeFailures: [],
+  },
+});
+await context.restoreActiveSession();
+await context.persistSession();
+assert.equal(storageState.activeSession.sessionId, "restored-session");
 
 const setup = context.normalizeSetup({
   enabled: true,
