@@ -105,10 +105,14 @@ def main() -> int:
         dimensions = png_dimensions(screenshot) if screenshot.is_file() else None
         if dimensions is None:
             failures.append(f"{state_path.name}: invalid PNG screenshot")
-        elif all(isinstance(value, int) for value in expected_size) and dimensions != expected_size:
-            failures.append(f"{state_path.name}: screenshot {dimensions} differs from viewport {expected_size}")
         viewport = state.get("viewport") or {}
         state_size = (viewport.get("width"), viewport.get("height"))
+        device_pixel_ratio = viewport.get("device_pixel_ratio", 1)
+        screenshot_size = tuple(
+            round(value * device_pixel_ratio) for value in state_size
+        ) if all(isinstance(value, int) for value in state_size) and isinstance(device_pixel_ratio, (int, float)) else None
+        if dimensions is not None and screenshot_size is not None and dimensions != screenshot_size:
+            failures.append(f"{state_path.name}: screenshot {dimensions} differs from DPR-scaled viewport {screenshot_size}")
         if all(isinstance(value, int) for value in expected_size) and state_size != expected_size:
             failures.append(f"{state_path.name}: state viewport {state_size} differs from manifest {expected_size}")
         scroll = state.get("scroll") or {}

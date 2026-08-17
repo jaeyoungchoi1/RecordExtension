@@ -7,7 +7,7 @@ const DEFAULT_SETTINGS = {
   viewportWidth: 1080,
   viewportHeight: 720,
   scrollStep: 200,
-  userId: "",
+  userId: "1",
   taskId: "",
   environmentType: "real",
   taskVersion: TASK_CATALOG_VERSION,
@@ -66,14 +66,16 @@ async function initialize() {
   populateTaskOptions();
   const existing = await chrome.storage.local.get(null);
   const migrated = { ...existing };
-  if (positiveInteger(existing.recorderDefaultsVersion, 0) < 3) {
+  if (positiveInteger(existing.recorderDefaultsVersion, 0) < 4) {
     if (existing.scrollStep == null || Number(existing.scrollStep) >= 500) migrated.scrollStep = 200;
     migrated.enabled = true;
-    migrated.recorderDefaultsVersion = 3;
+    migrated.userId = "1";
+    migrated.recorderDefaultsVersion = 4;
     await chrome.storage.local.set({
       scrollStep: migrated.scrollStep ?? DEFAULT_SETTINGS.scrollStep,
-      enabled: migrated.enabled ?? DEFAULT_SETTINGS.enabled,
-      recorderDefaultsVersion: 3
+      enabled: true,
+      userId: "1",
+      recorderDefaultsVersion: 4
     });
   }
   const stored = { ...DEFAULT_SETTINGS, ...migrated };
@@ -85,7 +87,7 @@ async function initialize() {
   }
 
   if (!TASKS.some((task) => task.taskId === fields.taskId.value)) fields.taskId.value = "";
-  handleTaskSelection({ replaceMetadata: !fields.taskPrompt.value, persist: false });
+  handleTaskSelection({ replaceMetadata: Boolean(selectedTask()), persist: false });
   updateRecordingButtons(Boolean(stored.isRecording));
   updateSyntheticVisibility();
   updateViewportMode({ detect: false, persist: false });
@@ -101,7 +103,7 @@ function populateTaskOptions() {
   for (const task of TASKS) {
     const option = document.createElement("option");
     option.value = task.taskId;
-    option.textContent = `Task ${task.taskId} — ${task.site} — ${task.title}`;
+    option.textContent = `Task ${task.taskId}`;
     fields.taskId.append(option);
   }
 }

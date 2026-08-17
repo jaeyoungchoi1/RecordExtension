@@ -4,7 +4,7 @@ const DEFAULT_SETTINGS = {
   viewportWidth: 1080,
   viewportHeight: 720,
   scrollStep: 200,
-  userId: "",
+  userId: "1",
   taskId: "",
   isRecording: false
 };
@@ -93,7 +93,7 @@ async function startSession(rawSetup, requestedTabId, streamId) {
   const tab = requestedTabId ? await chrome.tabs.get(requestedTabId) : (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
   if (!tab?.id || !isWebUrl(tab.url)) throw new Error("Open an http(s) task page before starting.");
   if (!streamId) throw new Error("Unable to obtain the browser-tab video stream.");
-  if (setup.enabled && setup.viewportMode === "adaptive") setup = await resolveAdaptiveViewport(tab.id, setup);
+  if (setup.viewportMode === "adaptive") setup = await resolveAdaptiveViewport(tab.id, setup);
 
   const storage = await requireStorageBackend();
   const rootHandle = storage.rootHandle || null;
@@ -129,7 +129,7 @@ async function startSession(rawSetup, requestedTabId, streamId) {
       height: setup.viewportHeight,
       mode: setup.viewportMode,
       detected: setup.viewportDetected,
-      device_scale_factor: 1,
+      device_scale_factor: setup.viewportDetected?.device_pixel_ratio || 1,
       browser_zoom: 1,
       scroll_step: setup.scrollStep
     },
@@ -435,6 +435,23 @@ async function captureCheckpoint(tabId, reasons, triggerEventIds) {
     captureScreenshot(target),
     capturePageContext(target)
   ]);
+
+  if (
+    activeSession.stateCount === 0 &&
+    activeSession.viewport.mode === "adaptive" &&
+    context.viewport?.width &&
+    context.viewport?.height
+  ) {
+    activeSession.viewport.width = context.viewport.width;
+    activeSession.viewport.height = context.viewport.height;
+    activeSession.viewport.device_scale_factor = context.viewport.device_pixel_ratio || 1;
+    activeSession.viewport.detected = {
+      width: context.viewport.width,
+      height: context.viewport.height,
+      device_pixel_ratio: context.viewport.device_pixel_ratio || 1,
+      detected_at: capturedAt
+    };
+  }
 
   const [htmlAsset, cssAsset, domAsset, axAsset] = await Promise.all([
     writeHashedAsset("dom", "html", html),
@@ -1106,6 +1123,9 @@ async function flushDownloadFiles(session) {
   const response = await chrome.runtime.sendMessage({
     type: "GAZEAWARE_OFFSCREEN_EXPORT_FILES",
     downloadRoot: session.downloadRoot,
+    sessionId: session.sessionId,
+    participantId: session.participantId,
+    taskId: session.taskId,
     files
   });
   if (!response?.ok) throw new Error(response?.error || "Could not export recording files.");

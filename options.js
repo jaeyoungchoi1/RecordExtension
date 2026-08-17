@@ -6,12 +6,14 @@ const DOWNLOAD_ROOT = "GazeAwareRecorder";
 
 const fields = {
   chooseFolder: document.getElementById("chooseFolder"),
+  resetSetup: document.getElementById("resetSetup"),
   folderStatus: document.getElementById("folderStatus"),
   message: document.getElementById("message")
 };
 
 document.addEventListener("DOMContentLoaded", initialize);
 fields.chooseFolder.addEventListener("click", chooseLogFolder);
+fields.resetSetup.addEventListener("click", resetRecordingSetup);
 
 async function initialize() {
   await updateFolderStatus();
@@ -60,6 +62,33 @@ async function chooseLogFolder() {
   }
 }
 
+async function resetRecordingSetup() {
+  clearMessage();
+  fields.chooseFolder.disabled = true;
+  fields.resetSetup.disabled = true;
+  try {
+    await deleteStoredRootHandle();
+    await chrome.storage.local.clear();
+    await chrome.storage.local.set({
+      enabled: true,
+      userId: "1",
+      viewportMode: "adaptive",
+      viewportWidth: 1080,
+      viewportHeight: 720,
+      scrollStep: 200,
+      recorderDefaultsVersion: 4,
+      isRecording: false
+    });
+    await updateFolderStatus();
+    setMessage("Recording setup cleared. Choose a new log folder.");
+  } catch (error) {
+    setMessage(error.message);
+  } finally {
+    fields.chooseFolder.disabled = false;
+    fields.resetSetup.disabled = false;
+  }
+}
+
 function openDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -76,6 +105,17 @@ async function storeRootHandle(handle) {
   try {
     const transaction = db.transaction(STORE_NAME, "readwrite");
     transaction.objectStore(STORE_NAME).put(handle, ROOT_HANDLE_KEY);
+    await idbTransaction(transaction);
+  } finally {
+    db.close();
+  }
+}
+
+async function deleteStoredRootHandle() {
+  const db = await openDatabase();
+  try {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    transaction.objectStore(STORE_NAME).delete(ROOT_HANDLE_KEY);
     await idbTransaction(transaction);
   } finally {
     db.close();

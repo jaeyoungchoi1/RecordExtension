@@ -129,6 +129,7 @@ async function stopVideo(sessionId) {
     pendingVideoExport = {
       blob: videoBlob,
       path: `task_logs/User ${sanitizePathPart(current.participantId)}/${sanitizePathPart(current.taskId)}/screen.webm`,
+      sessionId: current.sessionId,
       participantId: sanitizePathPart(current.participantId),
       taskId: sanitizePathPart(current.taskId)
     };
@@ -210,16 +211,22 @@ async function validateVideo(file, expectedDurationMs) {
 
 async function exportFiles(message) {
   const root = sanitizePathPart(message.downloadRoot || "GazeAwareRecorder");
+  const participant = sanitizePathPart(message.participantId || "unknown");
+  const task = sanitizePathPart(message.taskId || "session");
+  if (!pendingVideoExport) throw new Error("Recorded video is missing from the export.");
+  if (
+    pendingVideoExport.sessionId !== message.sessionId ||
+    pendingVideoExport.participantId !== participant ||
+    pendingVideoExport.taskId !== task
+  ) {
+    throw new Error("Recorded video does not match the task being exported.");
+  }
   const entries = [];
   for (const item of message.files || []) {
     const content = item.binary ? new Uint8Array(item.content || []) : String(item.content || "");
     entries.push({ path: item.path, bytes: new Uint8Array(await new Blob([content]).arrayBuffer()) });
   }
-  if (pendingVideoExport) {
-    entries.push({ path: pendingVideoExport.path, bytes: new Uint8Array(await pendingVideoExport.blob.arrayBuffer()) });
-  }
-  const participant = pendingVideoExport?.participantId || "unknown";
-  const task = pendingVideoExport?.taskId || "session";
+  entries.push({ path: pendingVideoExport.path, bytes: new Uint8Array(await pendingVideoExport.blob.arrayBuffer()) });
   const archive = createStoredZip(entries);
   const id = await downloadBlob(archive, `${root}/exports/User_${participant}_${task}.zip`);
   pendingVideoExport = null;
