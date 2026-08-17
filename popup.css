@@ -67,20 +67,13 @@ h2 {
   background: #f6faf9;
 }
 
-.task-summary strong,
-.task-summary span {
+.task-summary strong {
   display: block;
 }
 
 .task-summary strong {
   color: #16302f;
   font-size: 13px;
-}
-
-.task-summary span {
-  color: #52616a;
-  font-size: 12px;
-  line-height: 1.4;
 }
 
 .viewport-status {

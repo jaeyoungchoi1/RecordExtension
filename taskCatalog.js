@@ -1,6 +1,6 @@
 // Recorder-facing task catalog generated from task-launcher-netlify/app.js.
 // Participant-facing identity is the stable list position (Task 01-31).
-globalThis.GAZEAWARE_TASK_CATALOG_VERSION = "task-launcher-netlify-2026-08-18";
+globalThis.GAZEAWARE_TASK_CATALOG_VERSION = "task-launcher-netlify-2026-08-18-r2";
 globalThis.GAZEAWARE_TASKS = [
   ["Wikipedia", "Plant cell membrane", "Find the specific membrane in a plant cell that contains the proteins responsible for photosynthesis.", "https://en.wikipedia.org/wiki/Plant_cell"],
   ["Wikipedia", "Ancient Olympic training", "Find what kinds of preparation and training athletes underwent for the ancient Olympic Games.", "https://en.wikipedia.org/wiki/Ancient_Olympic_Games"],
@@ -19,8 +19,8 @@ globalThis.GAZEAWARE_TASKS = [
   ["Booking.com", "Cheapest accommodation in Seoul", "Find the cheapest available accommodation for next weekend.", "https://www.booking.com/"],
   ["Reddit r/technology", "Today’s top technology post", "Open r/technology. Select Top and Today, open the first post, and read its comments.", "https://www.reddit.com/r/technology/"],
   ["Reddit", "Accessibility app discussion", "Find a recent, popular discussion about accessibility apps and read its comments.", "https://www.reddit.com/"],
-  ["YouTube", "Latest MKBHD video", "Find and play the latest MKBHD video.", "https://www.youtube.com/"],
-  ["YouTube", "Most replayed part of a spaghetti tutorial", "Find a spaghetti cooking tutorial and navigate to its most replayed part.", "https://www.youtube.com/"],
+  ["YouTube", "Most replayed part of the latest MKBHD video", "Find the latest MKBHD video and navigate to its most replayed part. Use the video player’s most-replayed graph. Leave the video at its most replayed point.", "https://www.youtube.com/"],
+  ["YouTube", "Shortest spaghetti cooking tutorial", "Search for a spaghetti cooking tutorial, find the shortest video in the results, and play it. Leave the video playing.", "https://www.youtube.com/"],
   ["Target", "Best-rated scented candle over $10", "Find a scented candle costing more than $10 with the highest rating.", "https://www.target.com/"],
   ["CHI 2026", "Choose a subcommittee for a scanpath paper", "Determine which CHI 2026 subcommittee would be the best fit for a paper on scanpath prediction, then leave the relevant subcommittee page open.", "https://chi2026.acm.org/"],
   ["Apple", "Apple Intelligence tools", "On the MacBook Air pages, find information about the tools that Apple Intelligence is built into, then leave the relevant page open.", "https://www.apple.com/macbook-air/"],

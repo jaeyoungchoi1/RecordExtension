@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GazeAware Record Extension",
   "description": "Experimental web-browsing viewport and task setup recorder.",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "action": {
     "default_title": "GazeAware Recorder",
     "default_popup": "popup.html"

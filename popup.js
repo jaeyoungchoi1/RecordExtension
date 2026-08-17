@@ -37,7 +37,6 @@ const fields = Object.fromEntries([
 
 const views = {
   taskSummaryTitle: document.getElementById("taskSummaryTitle"),
-  taskSummaryPrompt: document.getElementById("taskSummaryPrompt"),
   viewportStatus: document.getElementById("viewportStatus"),
   manualViewportFields: document.getElementById("manualViewportFields"),
   syntheticFields: document.getElementById("syntheticFields"),
@@ -103,7 +102,7 @@ function populateTaskOptions() {
   for (const task of TASKS) {
     const option = document.createElement("option");
     option.value = task.taskId;
-    option.textContent = `Task ${task.taskId}`;
+    option.textContent = `Task ${task.taskId} · ${task.title}`;
     fields.taskId.append(option);
   }
 }
@@ -116,12 +115,10 @@ function handleTaskSelection(options = {}) {
   const task = selectedTask();
   if (!task) {
     views.taskSummaryTitle.textContent = "Choose one of the launcher tasks.";
-    views.taskSummaryPrompt.textContent = "";
     return;
   }
 
-  views.taskSummaryTitle.textContent = `Task ${task.taskId} · ${task.site} · ${task.title}`;
-  views.taskSummaryPrompt.textContent = task.prompt;
+  views.taskSummaryTitle.textContent = `Task ${task.taskId} · ${task.title}`;
   if (options.replaceMetadata) {
     fields.taskPrompt.value = task.prompt;
     fields.taskVersion.value = TASK_CATALOG_VERSION;
