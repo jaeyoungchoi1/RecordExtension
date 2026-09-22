@@ -1,2 +1,6 @@
 task_logs/
 .DS_Store
+
+# Large local audit outputs. Standalone compact HTML reports remain tracked.
+processing_pipeline/jy_derived/common_review/data/
+processing_pipeline/jy_derived/common_review/jy_index.json

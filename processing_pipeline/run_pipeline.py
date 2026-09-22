@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-from validate_inputs import DEFAULT_LOG_ROOT, DEFAULT_MAPPED_ROOT, normalized_task_ids, validate
+from validate_inputs import DEFAULT_USER_ROOT, normalized_task_ids, validate
 
 
 PIPELINE_ROOT = Path(__file__).resolve().parent
@@ -48,9 +48,12 @@ def path_arguments(log_root: Path, mapped_root: Path, output_root: Path, tasks: 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate and rebuild the 0819 gaze-to-episode pipeline.")
-    parser.add_argument("--log-root", type=Path, default=DEFAULT_LOG_ROOT)
-    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path, default=DEFAULT_MAPPED_ROOT,
-                        help="User 1 mapped/ or User 3/4 out/ folder containing screen-mapped gaze CSVs")
+    parser.add_argument("--user-root", type=Path, default=DEFAULT_USER_ROOT,
+                        help="Participant folder containing task_logs/ and mapped/ (default: workspace/User 1)")
+    parser.add_argument("--log-root", type=Path,
+                        help="Override the participant's task_logs/ directory")
+    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path,
+                        help="Override the participant's mapped/ directory")
     parser.add_argument("--output-root", type=Path,
                         help="Parent directory for component_state_review and episode_review. Defaults to processing_pipeline/derived.")
     parser.add_argument("--tasks", nargs="*", help="Task IDs; omit for all numeric recorder folders")
@@ -61,8 +64,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.component_only and args.episode_only:
         parser.error("Choose at most one of --component-only and --episode-only.")
 
-    log_root = args.log_root.expanduser().resolve()
-    mapped_root = args.mapped_root.expanduser().resolve()
+    user_root = args.user_root.expanduser().resolve()
+    log_root = (args.log_root or user_root / "task_logs").expanduser().resolve()
+    mapped_root = (args.mapped_root or user_root / "mapped").expanduser().resolve()
     tasks = normalized_task_ids(args.tasks, log_root)
     if not args.skip_validation:
         report = validate(log_root, mapped_root, tasks)

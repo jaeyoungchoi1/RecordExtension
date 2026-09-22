@@ -16,11 +16,11 @@ episode-review data and static viewer
 
 It is designed for reusing the same analysis with another participant. It does not claim to reconstruct raw eye-tracker sensor data or the reference-image mapping that happened before `mapped/taskXX_mapped_gaze.csv` was written.
 
-User 3/4-style `out/taskN_gaze.csv` files with the required columns are accepted directly by the runner. The optional `prepare_mapped_gaze.py` only normalizes filenames for older downstream tools; it is not another gaze-to-screen transformation.
+User 3/4-style `mapped/taskN_gaze.csv` files with the required columns are accepted directly by the runner. The optional `prepare_mapped_gaze.py` only normalizes filenames for older downstream tools; it is not another gaze-to-screen transformation.
 
 ## Inputs
 
-Each task has a recorder folder under `task_logs/<participant>/<task_id>/` containing:
+Each participant is stored under `User N/`, with recorder tasks in `User N/task_logs/<task_id>/` and gaze data in `User N/mapped/`. Each task folder contains:
 
 - `session.json`: task prompt and recorded outcome;
 - `events.jsonl`: timestamped browser, pointer, keyboard, navigation, and checkpoint events;
@@ -29,7 +29,7 @@ Each task has a recorder folder under `task_logs/<participant>/<task_id>/` conta
 - `assets/dom_snapshot/*.json`: DOM layout snapshots;
 - `assets/ax/*.json`: accessibility-tree snapshots.
 
-Each task also needs one screen-mapped gaze CSV: either User 1's `mapped/taskXX_mapped_gaze.csv` or User 3/4's `out/taskN_gaze.csv`. The current code requires these columns:
+Each task also needs one screen-mapped gaze CSV: either `mapped/taskXX_mapped_gaze.csv` or `mapped/taskN_gaze.csv`. The current code requires these columns:
 
 | Column | Use |
 |---|---|

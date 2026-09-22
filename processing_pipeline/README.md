@@ -5,12 +5,22 @@ It preserves the existing 0819 output schemas while making paths and stages expl
 
 The pipeline begins with **screen-mapped gaze**. It does not recreate the earlier eye-tracker export or reference-image registration step because the available 31-task code receives `taskXX_mapped_gaze.csv` as its input.
 
-### User 1 and User 3/4 folder conventions
+### Per-user folder convention
 
-Both supported forms already contain screen-mapped gaze and can be passed directly to `--gaze-root`:
+Each participant has both inputs under one folder:
+
+```text
+User N/
+├── mapped/
+│   └── taskXX_mapped_gaze.csv (or taskN_gaze.csv)
+└── task_logs/
+    └── XX/
+```
+
+Both mapped-gaze filename forms are accepted:
 
 - User 1: `mapped/task01_mapped_gaze.csv`
-- User 3/4: `out/task1_gaze.csv`
+- User 3/4: `mapped/task1_gaze.csv`
 
 No filename conversion or duplicate CSVs are required. `prepare_mapped_gaze.py` remains available only for older downstream tools that insist on the User 1 filename convention.
 
@@ -55,8 +65,7 @@ Use a User 3/4-style bundle directly:
 
 ```bash
 python3 processing_pipeline/run_pipeline.py \
-  --log-root "/path/to/task_logs/User 3" \
-  --gaze-root /path/to/out \
+  --user-root "/path/to/User 3" \
   --output-root /path/to/new_user/derived
 ```
 
@@ -69,4 +78,4 @@ The canonical 0819 builders are included under `builders/` so this repository ca
 - `builders/build_component_state_review.py`
 - `builders/build_episode_review.py`
 
-They accept `--log-root`, `--gaze-root` (or legacy `--mapped-root`), and `--output-root` and retain the original component attribution and episode-construction logic.
+They accept `--user-root`, optional `--log-root`/`--gaze-root` overrides, and `--output-root` and retain the original component attribution and episode-construction logic.

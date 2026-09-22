@@ -16,8 +16,10 @@ from typing import Iterable
 
 
 PIPELINE_ROOT = Path(__file__).resolve().parent
-DEFAULT_LOG_ROOT = PIPELINE_ROOT / "task_logs" / "User 1"
-DEFAULT_MAPPED_ROOT = PIPELINE_ROOT / "mapped"
+WORKSPACE_ROOT = PIPELINE_ROOT.parents[1]
+DEFAULT_USER_ROOT = WORKSPACE_ROOT / "User 1"
+DEFAULT_LOG_ROOT = DEFAULT_USER_ROOT / "task_logs"
+DEFAULT_MAPPED_ROOT = DEFAULT_USER_ROOT / "mapped"
 REQUIRED_GAZE_COLUMNS = {
     "timestamp [ns]",
     "gaze detected in reference image",
@@ -85,14 +87,18 @@ def validate(log_root: Path, mapped_root: Path, task_ids: Iterable[str]) -> dict
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate 0819 recorder and mapped-gaze inputs.")
-    parser.add_argument("--log-root", type=Path, default=DEFAULT_LOG_ROOT)
-    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path, default=DEFAULT_MAPPED_ROOT,
-                        help="User 1 mapped/ or User 3/4 out/ folder containing screen-mapped gaze CSVs")
+    parser.add_argument("--user-root", type=Path, default=DEFAULT_USER_ROOT,
+                        help="Participant folder containing task_logs/ and mapped/ (default: workspace/User 1)")
+    parser.add_argument("--log-root", type=Path,
+                        help="Override the participant's task_logs/ directory")
+    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path,
+                        help="Override the participant's mapped/ directory")
     parser.add_argument("--tasks", nargs="*", help="Task IDs; omit for every numeric recorder folder")
     parser.add_argument("--report", type=Path, help="Optional path for the JSON validation report")
     args = parser.parse_args(argv)
-    log_root = args.log_root.expanduser().resolve()
-    mapped_root = args.mapped_root.expanduser().resolve()
+    user_root = args.user_root.expanduser().resolve()
+    log_root = (args.log_root or user_root / "task_logs").expanduser().resolve()
+    mapped_root = (args.mapped_root or user_root / "mapped").expanduser().resolve()
     report = validate(log_root, mapped_root, normalized_task_ids(args.tasks, log_root))
     payload = json.dumps(report, ensure_ascii=False, indent=2)
     if args.report:

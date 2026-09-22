@@ -24,8 +24,10 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parent
-LOG_ROOT = ROOT / "task_logs" / "User 1"
-MAPPED_ROOT = ROOT / "mapped"
+WORKSPACE_ROOT = ROOT.parents[2]
+USER_ROOT = WORKSPACE_ROOT / "User 1"
+LOG_ROOT = USER_ROOT / "task_logs"
+MAPPED_ROOT = USER_ROOT / "mapped"
 OUT = ROOT / "component_state_review"
 MIN_VISIT_MS = 100
 MAX_GAP_MS = 75
@@ -91,7 +93,7 @@ def load_gaze(path: Path):
 
 
 def gaze_csv_path(gaze_root: Path, task_id: str) -> Path:
-    """Accept User 1 mapped/taskNN_mapped_gaze.csv and User 3/4 out/taskN_gaze.csv."""
+    """Accept both mapped/taskNN_mapped_gaze.csv and mapped/taskN_gaze.csv."""
     task_number = int(task_id)
     candidates = (
         gaze_root / f"task{task_number:02d}_mapped_gaze.csv",
@@ -418,15 +420,18 @@ def main(argv: list[str] | None = None):
     global LOG_ROOT, MAPPED_ROOT, OUT
     parser = argparse.ArgumentParser()
     parser.add_argument("--tasks", nargs="*", help="Task IDs, e.g. 01 02")
-    parser.add_argument("--log-root", type=Path, default=LOG_ROOT,
-                        help="Directory containing one recorder folder per task")
-    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path, default=MAPPED_ROOT,
-                        help="User 1 mapped/ or User 3/4 out/ folder containing screen-mapped gaze CSVs")
+    parser.add_argument("--user-root", type=Path, default=USER_ROOT,
+                        help="Participant folder containing task_logs/ and mapped/")
+    parser.add_argument("--log-root", type=Path,
+                        help="Override the participant's task_logs/ directory")
+    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path,
+                        help="Override the participant's mapped/ directory")
     parser.add_argument("--output-root", type=Path, default=OUT,
                         help="Directory for component review HTML, overlays, and CSV files")
     args = parser.parse_args(argv)
-    LOG_ROOT = args.log_root.expanduser().resolve()
-    MAPPED_ROOT = args.mapped_root.expanduser().resolve()
+    user_root = args.user_root.expanduser().resolve()
+    LOG_ROOT = (args.log_root or user_root / "task_logs").expanduser().resolve()
+    MAPPED_ROOT = (args.mapped_root or user_root / "mapped").expanduser().resolve()
     OUT = args.output_root.expanduser().resolve()
     selected = {str(value).zfill(2) for value in args.tasks} if args.tasks else None
     if OUT.exists() and selected is None: shutil.rmtree(OUT)
