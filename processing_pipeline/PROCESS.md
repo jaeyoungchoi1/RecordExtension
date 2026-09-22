@@ -16,6 +16,8 @@ episode-review data and static viewer
 
 It is designed for reusing the same analysis with another participant. It does not claim to reconstruct raw eye-tracker sensor data or the reference-image mapping that happened before `mapped/taskXX_mapped_gaze.csv` was written.
 
+If a collection supplies `out/taskN_gaze.csv` with the required columns instead, run `prepare_mapped_gaze.py` first. It only normalizes filenames using links (or optional copies); it is not another gaze-to-screen transformation.
+
 ## Inputs
 
 Each task has a recorder folder under `task_logs/<participant>/<task_id>/` containing:

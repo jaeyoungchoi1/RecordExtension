@@ -5,6 +5,18 @@ It preserves the existing 0819 output schemas while making paths and stages expl
 
 The pipeline begins with **screen-mapped gaze**. It does not recreate the earlier eye-tracker export or reference-image registration step because the available 31-task code receives `taskXX_mapped_gaze.csv` as its input.
 
+### If the bundle already has `out/taskN_gaze.csv`
+
+Files with the required transformed x/y columns are already screen-mapped gaze; they do not need another gaze-registration step. Normalize their historical filenames once, using links by default (no duplicated CSVs):
+
+```bash
+python3 processing_pipeline/prepare_mapped_gaze.py \
+  --source-root /path/to/out \
+  --mapped-root /path/to/mapped
+```
+
+Then pass that `mapped` folder as `--mapped-root` to the validator and runner. Add `--copy` only if symbolic links are unsuitable for the handoff environment.
+
 ## What this bundle runs
 
 ```text
