@@ -16,7 +16,7 @@ episode-review data and static viewer
 
 It is designed for reusing the same analysis with another participant. It does not claim to reconstruct raw eye-tracker sensor data or the reference-image mapping that happened before `mapped/taskXX_mapped_gaze.csv` was written.
 
-If a collection supplies `out/taskN_gaze.csv` with the required columns instead, run `prepare_mapped_gaze.py` first. It only normalizes filenames using links (or optional copies); it is not another gaze-to-screen transformation.
+User 3/4-style `out/taskN_gaze.csv` files with the required columns are accepted directly by the runner. The optional `prepare_mapped_gaze.py` only normalizes filenames for older downstream tools; it is not another gaze-to-screen transformation.
 
 ## Inputs
 
@@ -29,7 +29,7 @@ Each task has a recorder folder under `task_logs/<participant>/<task_id>/` conta
 - `assets/dom_snapshot/*.json`: DOM layout snapshots;
 - `assets/ax/*.json`: accessibility-tree snapshots.
 
-Each task also needs one screen-mapped gaze CSV, named `taskXX_mapped_gaze.csv`. The current code requires these columns:
+Each task also needs one screen-mapped gaze CSV: either User 1's `mapped/taskXX_mapped_gaze.csv` or User 3/4's `out/taskN_gaze.csv`. The current code requires these columns:
 
 | Column | Use |
 |---|---|
@@ -124,7 +124,7 @@ When using `run_pipeline.py --output-root /path/to/output`, the runner writes:
 
 ## Reproduction checklist for another participant
 
-1. Preserve a task-level correspondence between recorder folder and gaze CSV: task `12` uses `task12_mapped_gaze.csv`.
+1. Preserve a task-level correspondence between recorder folder and gaze CSV: task `12` uses either `task12_mapped_gaze.csv` or `task12_gaze.csv`.
 2. Confirm that recorder event timestamps are in milliseconds and mapped-gaze timestamps are in nanoseconds from the same clock basis.
 3. Confirm that transformed gaze coordinates use the screenshot pixel frame after device-pixel-ratio scaling.
 4. Run `validate_inputs.py` and resolve every failed task before rebuilding outputs.

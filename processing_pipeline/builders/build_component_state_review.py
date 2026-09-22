@@ -90,6 +90,16 @@ def load_gaze(path: Path):
     return sorted(rows)
 
 
+def gaze_csv_path(gaze_root: Path, task_id: str) -> Path:
+    """Accept User 1 mapped/taskNN_mapped_gaze.csv and User 3/4 out/taskN_gaze.csv."""
+    task_number = int(task_id)
+    candidates = (
+        gaze_root / f"task{task_number:02d}_mapped_gaze.csv",
+        gaze_root / f"task{task_number}_gaze.csv",
+    )
+    return next((path for path in candidates if path.exists()), candidates[0])
+
+
 def attributes(nodes: dict, strings: list[str], index: int) -> dict[str, str]:
     raw = nodes.get("attributes", [])[index] if index < len(nodes.get("attributes", [])) else []
     return {
@@ -410,8 +420,8 @@ def main(argv: list[str] | None = None):
     parser.add_argument("--tasks", nargs="*", help="Task IDs, e.g. 01 02")
     parser.add_argument("--log-root", type=Path, default=LOG_ROOT,
                         help="Directory containing one recorder folder per task")
-    parser.add_argument("--mapped-root", type=Path, default=MAPPED_ROOT,
-                        help="Directory containing taskXX_mapped_gaze.csv files")
+    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path, default=MAPPED_ROOT,
+                        help="User 1 mapped/ or User 3/4 out/ folder containing screen-mapped gaze CSVs")
     parser.add_argument("--output-root", type=Path, default=OUT,
                         help="Directory for component review HTML, overlays, and CSV files")
     args = parser.parse_args(argv)
@@ -425,7 +435,7 @@ def main(argv: list[str] | None = None):
     for task_id, folder in task_dirs(selected):
         session = load_json(folder / "session.json"); events = load_events(folder / "events.jsonl")
         states = sorted([load_json(path) for path in (folder / "states").glob("*.json")], key=lambda row: row["timestamp_ms"])
-        gaze = load_gaze(MAPPED_ROOT / f"task{task_id}_mapped_gaze.csv")
+        gaze = load_gaze(gaze_csv_path(MAPPED_ROOT, task_id))
         task_start, task_end = min(event["timestamp_ms"] for event in events), max(event["timestamp_ms"] for event in events)
         task = {"task_id": task_id, "title": session["task"]["title"], "prompt": session.get("task_prompt", ""), "outcome": (session.get("outcome") or {}).get("final_choice", "")}
         page_states = []

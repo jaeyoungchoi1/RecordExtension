@@ -5,17 +5,14 @@ It preserves the existing 0819 output schemas while making paths and stages expl
 
 The pipeline begins with **screen-mapped gaze**. It does not recreate the earlier eye-tracker export or reference-image registration step because the available 31-task code receives `taskXX_mapped_gaze.csv` as its input.
 
-### If the bundle already has `out/taskN_gaze.csv`
+### User 1 and User 3/4 folder conventions
 
-Files with the required transformed x/y columns are already screen-mapped gaze; they do not need another gaze-registration step. Normalize their historical filenames once, using links by default (no duplicated CSVs):
+Both supported forms already contain screen-mapped gaze and can be passed directly to `--gaze-root`:
 
-```bash
-python3 processing_pipeline/prepare_mapped_gaze.py \
-  --source-root /path/to/out \
-  --mapped-root /path/to/mapped
-```
+- User 1: `mapped/task01_mapped_gaze.csv`
+- User 3/4: `out/task1_gaze.csv`
 
-Then pass that `mapped` folder as `--mapped-root` to the validator and runner. Add `--copy` only if symbolic links are unsuitable for the handoff environment.
+No filename conversion or duplicate CSVs are required. `prepare_mapped_gaze.py` remains available only for older downstream tools that insist on the User 1 filename convention.
 
 ## What this bundle runs
 
@@ -54,12 +51,12 @@ python3 processing_pipeline/run_pipeline.py \
   --output-root /tmp/0819_task12_check
 ```
 
-Use a new participant's data by replacing only the two input roots:
+Use a User 3/4-style bundle directly:
 
 ```bash
 python3 processing_pipeline/run_pipeline.py \
-  --log-root /path/to/new_user/task_logs \
-  --mapped-root /path/to/new_user/mapped \
+  --log-root "/path/to/task_logs/User 3" \
+  --gaze-root /path/to/out \
   --output-root /path/to/new_user/derived
 ```
 
@@ -72,4 +69,4 @@ The canonical 0819 builders are included under `builders/` so this repository ca
 - `builders/build_component_state_review.py`
 - `builders/build_episode_review.py`
 
-They accept `--log-root`, `--mapped-root`, and `--output-root` and retain the original component attribution and episode-construction logic.
+They accept `--log-root`, `--gaze-root` (or legacy `--mapped-root`), and `--output-root` and retain the original component attribution and episode-construction logic.

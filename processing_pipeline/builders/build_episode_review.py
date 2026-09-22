@@ -259,7 +259,7 @@ def build_task(task_id: str) -> tuple[dict, list[dict], list[dict], list[dict]]:
     folder = LOG_ROOT / task_id
     session = base.load_json(folder / "session.json")
     events = base.load_events(folder / "events.jsonl")
-    gaze = base.load_gaze(MAPPED_ROOT / f"task{task_id}_mapped_gaze.csv")
+    gaze = base.load_gaze(base.gaze_csv_path(MAPPED_ROOT, task_id))
     task_start, task_end = min(e["timestamp_ms"] for e in events), max(e["timestamp_ms"] for e in events)
     states = state_data(task_id, folder, session, events, gaze)
     episodes = base_episodes(task_id, states, events, task_start, task_end)
@@ -357,8 +357,8 @@ def main(argv: list[str] | None = None):
     parser.add_argument("--tasks", nargs="*", help="Task IDs, e.g. 01 02")
     parser.add_argument("--log-root", type=Path, default=LOG_ROOT,
                         help="Directory containing one recorder folder per task")
-    parser.add_argument("--mapped-root", type=Path, default=MAPPED_ROOT,
-                        help="Directory containing taskXX_mapped_gaze.csv files")
+    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path, default=MAPPED_ROOT,
+                        help="User 1 mapped/ or User 3/4 out/ folder containing screen-mapped gaze CSVs")
     parser.add_argument("--output-root", type=Path, default=OUT,
                         help="Directory for the static episode-review viewer")
     args = parser.parse_args(argv)

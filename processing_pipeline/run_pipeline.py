@@ -38,7 +38,7 @@ def load_module(name: str, path: Path) -> ModuleType:
 def path_arguments(log_root: Path, mapped_root: Path, output_root: Path, tasks: list[str]) -> list[str]:
     arguments = [
         "--log-root", str(log_root),
-        "--mapped-root", str(mapped_root),
+        "--gaze-root", str(mapped_root),
         "--output-root", str(output_root),
     ]
     if tasks:
@@ -49,7 +49,8 @@ def path_arguments(log_root: Path, mapped_root: Path, output_root: Path, tasks: 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate and rebuild the 0819 gaze-to-episode pipeline.")
     parser.add_argument("--log-root", type=Path, default=DEFAULT_LOG_ROOT)
-    parser.add_argument("--mapped-root", type=Path, default=DEFAULT_MAPPED_ROOT)
+    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path, default=DEFAULT_MAPPED_ROOT,
+                        help="User 1 mapped/ or User 3/4 out/ folder containing screen-mapped gaze CSVs")
     parser.add_argument("--output-root", type=Path,
                         help="Parent directory for component_state_review and episode_review. Defaults to processing_pipeline/derived.")
     parser.add_argument("--tasks", nargs="*", help="Task IDs; omit for all numeric recorder folders")

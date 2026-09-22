@@ -26,6 +26,16 @@ REQUIRED_GAZE_COLUMNS = {
 }
 
 
+def gaze_csv_path(gaze_root: Path, task_id: str) -> Path:
+    """Accept both the User 1 and User 3/4 mapped-gaze filename conventions."""
+    task_number = int(task_id)
+    candidates = (
+        gaze_root / f"task{task_number:02d}_mapped_gaze.csv",  # User 1: mapped/
+        gaze_root / f"task{task_number}_gaze.csv",              # User 3/4: out/
+    )
+    return next((path for path in candidates if path.exists()), candidates[0])
+
+
 def normalized_task_ids(values: Iterable[str] | None, log_root: Path) -> list[str]:
     if values:
         return [f"{int(value):02d}" for value in values]
@@ -37,7 +47,7 @@ def validate(log_root: Path, mapped_root: Path, task_ids: Iterable[str]) -> dict
     rows = []
     for task_id in task_ids:
         task_dir = log_root / task_id
-        gaze_path = mapped_root / f"task{task_id}_mapped_gaze.csv"
+        gaze_path = gaze_csv_path(mapped_root, task_id)
         missing = [name for name in ("session.json", "events.jsonl", "states") if not (task_dir / name).exists()]
         state_count = len(list((task_dir / "states").glob("*.json"))) if (task_dir / "states").exists() else 0
         gaze_error = ""
@@ -76,7 +86,8 @@ def validate(log_root: Path, mapped_root: Path, task_ids: Iterable[str]) -> dict
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate 0819 recorder and mapped-gaze inputs.")
     parser.add_argument("--log-root", type=Path, default=DEFAULT_LOG_ROOT)
-    parser.add_argument("--mapped-root", type=Path, default=DEFAULT_MAPPED_ROOT)
+    parser.add_argument("--mapped-root", "--gaze-root", dest="mapped_root", type=Path, default=DEFAULT_MAPPED_ROOT,
+                        help="User 1 mapped/ or User 3/4 out/ folder containing screen-mapped gaze CSVs")
     parser.add_argument("--tasks", nargs="*", help="Task IDs; omit for every numeric recorder folder")
     parser.add_argument("--report", type=Path, help="Optional path for the JSON validation report")
     args = parser.parse_args(argv)
