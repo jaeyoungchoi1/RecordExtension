@@ -1,0 +1,58 @@
+{
+  "selection_method": "Up to two reviewable non-launcher episodes per task at approximately one-third and two-thirds of that task's reviewable episode sequence; action-only exceptions are retained with warnings.",
+  "sample_count": 60,
+  "task_count": 30,
+  "dimensions": {
+    "task_intent_provisional": {
+      "informational": 38,
+      "navigational": 4,
+      "transactional": 18
+    },
+    "specificity_provisional": {
+      "concrete": 40,
+      "vague": 20
+    },
+    "task_outcome": {
+      "failure": 2,
+      "success": 58
+    },
+    "task_duration_band": {
+      "long": 4,
+      "medium": 24,
+      "short": 32
+    },
+    "website_domain": {
+      "chi2026.acm.org": 6,
+      "en.wikipedia.org": 6,
+      "programs.sigchi.org": 2,
+      "unavailable": 2,
+      "www.amazon.com": 6,
+      "www.apple.com": 2,
+      "www.bbc.com": 2,
+      "www.cs.utah.edu": 6,
+      "www.expedia.com": 2,
+      "www.gardeners.com": 2,
+      "www.google.com": 2,
+      "www.heb.com": 4,
+      "www.reddit.com": 8,
+      "www.sipandfeast.com": 2,
+      "www.target.com": 2,
+      "www.youtube.com": 6
+    },
+    "episode_position": {
+      "early": 30,
+      "late": 30
+    }
+  },
+  "evidence_coverage": {
+    "has_result_state": 54,
+    "has_post_action_mapped_visit": 28,
+    "document_reset": 8,
+    "source_warning": 2
+  },
+  "limitations": [
+    "Intent and specificity labels are provisional until the original task-library metadata is recovered or reviewed.",
+    "The dataset's recorded task outcomes determine whether outcome strata vary; sampling cannot manufacture absent outcome classes.",
+    "Website domain is a reproducible proxy for website type and should be collapsed into researcher-defined site categories before inferential analysis."
+  ]
+}

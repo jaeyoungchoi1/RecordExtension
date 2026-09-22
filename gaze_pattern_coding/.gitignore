@@ -1,0 +1,4 @@
+__pycache__/
+*.py[cod]
+coder_*.freeze.json
+adjudicated.freeze.json

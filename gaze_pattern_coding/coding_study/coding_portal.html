@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Independent episode coding</title>
+  <link rel="stylesheet" href="coding_portal_styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Independent episode coding</h1>
+      <p>Code observable evidence only. Automatic suggestions and the other coder's decisions are not shown.</p>
+    </div>
+    <div class="header-actions">
+      <span id="coderBadge"></span>
+      <span id="progress"></span>
+      <button id="exportCsv">Export CSV</button>
+      <button id="exportJson">Export JSON</button>
+    </div>
+  </header>
+
+  <nav class="stepbar" aria-label="Sample navigation">
+    <button id="previousSample">← Previous</button>
+    <label>Sample<select id="sampleSelect"></select></label>
+    <button id="nextSample">Next →</button>
+    <label class="filter"><input id="incompleteOnly" type="checkbox"> Incomplete only</label>
+    <span id="saveStatus" role="status"></span>
+  </nav>
+
+  <main>
+    <aside class="sample-list" aria-label="Coding sample list"><div id="sampleList"></div></aside>
+
+    <section class="evidence-panel">
+      <div class="panel-heading">
+        <div><h2 id="episodeTitle"></h2><p id="episodeMeta"></p></div>
+        <a id="visualReview" target="_blank" rel="noopener">Open screenshot + AX-tree review</a>
+      </div>
+      <div id="sourceWarning" class="warning" role="status"></div>
+      <div class="task-box"><strong>Task prompt</strong><p id="taskPrompt"></p></div>
+      <div class="evidence-columns">
+        <section><h3>Source episode</h3><div id="sourceEvidence"></div></section>
+        <section><h3>Linked result state</h3><div id="resultEvidence"></div></section>
+      </div>
+      <section><h3>Bounded adjacent context</h3><div id="adjacentContext"></div></section>
+      <details class="constraints"><summary>Interpretation constraints</summary><ul id="constraints"></ul></details>
+    </section>
+
+    <section class="coding-panel">
+      <h2>Coder judgment</h2>
+      <div class="form-grid">
+        <label>Primary observed behavior<select id="primaryBehavior"></select></label>
+        <label>Optional secondary behavior<select id="secondaryBehavior"></select></label>
+        <label>AX projection<select id="axProjection"></select></label>
+        <label>Episode outcome<select id="outcome"></select></label>
+        <label>Confidence<select id="confidence"><option value=""></option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+        <label>Needs human review<select id="needsReview"><option value=""></option><option value="true">True</option><option value="false">False</option></select></label>
+      </div>
+      <fieldset><legend>Evidence modifiers</legend><div id="modifiers" class="checks"></div></fieldset>
+      <label>Evidence supporting the code<textarea id="evidenceNote" rows="5" placeholder="Cite visit numbers, action, state transition, and AX evidence."></textarea></label>
+      <label>Notes / strongest alternative<textarea id="notes" rows="4" placeholder="Explain exclusions, ambiguity, or why you abstained."></textarea></label>
+      <p class="completion-note">A sample counts as complete when primary behavior, AX projection, outcome, confidence, review decision, and evidence are filled. Secondary behavior is optional.</p>
+      <details class="codebook"><summary>Codebook reference</summary><div id="codebookReference"></div></details>
+    </section>
+  </main>
+
+  <script src="coding_portal_data.js"></script>
+  <script src="coding_portal_app.js"></script>
+</body>
+</html>

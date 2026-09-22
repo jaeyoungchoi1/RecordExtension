@@ -1,0 +1,67 @@
+{
+  "primary_behavior": {
+    "n": 0,
+    "agreement": null,
+    "kappa": null,
+    "coder_a_missing": 61,
+    "coder_b_missing": 61
+  },
+  "secondary_behavior": {
+    "n": 0,
+    "agreement": null,
+    "kappa": null,
+    "coder_a_missing": 61,
+    "coder_b_missing": 61
+  },
+  "ax_projection": {
+    "n": 0,
+    "agreement": null,
+    "kappa": null,
+    "coder_a_missing": 61,
+    "coder_b_missing": 61
+  },
+  "outcome": {
+    "n": 0,
+    "agreement": null,
+    "kappa": null,
+    "coder_a_missing": 61,
+    "coder_b_missing": 61
+  },
+  "confidence": {
+    "n": 0,
+    "agreement": null,
+    "kappa": null,
+    "coder_a_missing": 61,
+    "coder_b_missing": 61
+  },
+  "needs_human_review": {
+    "n": 0,
+    "agreement": null,
+    "kappa": null,
+    "coder_a_missing": 61,
+    "coder_b_missing": 61
+  },
+  "evidence_completeness": {
+    "paired_nonblank": 0,
+    "coder_a_missing": 61,
+    "coder_b_missing": 61
+  },
+  "modifiers": {
+    "n": 0,
+    "mean_jaccard": null
+  },
+  "completeness": {
+    "sample_count": 61,
+    "required_fields": [
+      "primary_behavior",
+      "ax_projection",
+      "outcome",
+      "confidence",
+      "evidence",
+      "needs_human_review"
+    ],
+    "coder_a_missing_required_cells": 366,
+    "coder_b_missing_required_cells": 366,
+    "both_passes_complete": false
+  }
+}

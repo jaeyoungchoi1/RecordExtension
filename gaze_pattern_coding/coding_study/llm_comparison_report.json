@@ -1,0 +1,46 @@
+{
+  "gold_rows": 61,
+  "llm_rows": 11,
+  "overlap_rows": 11,
+  "dimensions": {
+    "primary_behavior": {
+      "n": 0,
+      "agreement": null,
+      "missing_gold": 11,
+      "missing_llm": 0
+    },
+    "secondary_behavior": {
+      "n": 0,
+      "agreement": null,
+      "missing_gold": 11,
+      "missing_llm": 9
+    },
+    "ax_projection": {
+      "n": 0,
+      "agreement": null,
+      "missing_gold": 11,
+      "missing_llm": 0
+    },
+    "outcome": {
+      "n": 0,
+      "agreement": null,
+      "missing_gold": 11,
+      "missing_llm": 0
+    },
+    "confidence": {
+      "n": 0,
+      "agreement": null,
+      "missing_gold": 11,
+      "missing_llm": 0
+    },
+    "needs_human_review": {
+      "n": 0,
+      "agreement": null,
+      "missing_gold": 11,
+      "missing_llm": 0
+    }
+  },
+  "primary_behavior_by_code": {},
+  "primary_behavior_by_llm_confidence": {},
+  "missing_gold_primary_in_overlap": 11
+}

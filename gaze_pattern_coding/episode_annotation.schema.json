@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Episode annotation",
+  "type": "object",
+  "required": [
+    "task_id",
+    "episode_id",
+    "primary_behavior",
+    "ax_projection",
+    "outcome",
+    "confidence",
+    "evidence",
+    "needs_human_review"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^[0-9]{2}$"
+    },
+    "episode_id": {
+      "type": "string"
+    },
+    "primary_behavior": {
+      "enum": [
+        "DIR",
+        "SCN",
+        "ORI",
+        "EXP",
+        "CMP",
+        "RET",
+        "VER",
+        "INS",
+        "ABSTAIN"
+      ]
+    },
+    "secondary_behavior": {
+      "enum": [
+        "",
+        "DIR",
+        "SCN",
+        "ORI",
+        "EXP",
+        "CMP",
+        "RET",
+        "VER",
+        "INS"
+      ]
+    },
+    "ax_projection": {
+      "enum": [
+        "AX_LOCAL",
+        "AX_CROSS",
+        "AX_RETURN",
+        "AX_RESET",
+        "AX_UNMAPPED"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "OUT_CONTINUE",
+        "OUT_SELECT",
+        "OUT_CONFIRM",
+        "OUT_UNRESOLVED",
+        "OUT_UNKNOWN"
+      ]
+    },
+    "modifiers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "ordered",
+          "short_dwell_relative",
+          "repeated",
+          "cross_state",
+          "cross_document",
+          "hub_detail",
+          "attribute_linked",
+          "query_changed",
+          "filter_or_sort_changed",
+          "browser_history",
+          "state_change_observed",
+          "evidence_cumulative",
+          "mapping_uncertain"
+        ]
+      }
+    },
+    "confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "detail"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "visit",
+              "action",
+              "state",
+              "ax",
+              "task"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evidence_against_alternatives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "accessibility_implication": {
+      "type": "string"
+    },
+    "needs_human_review": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
